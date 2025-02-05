@@ -15,8 +15,7 @@ class TagLemma:
             'tag', 'nam', 'nag', 
             'may', 'ni', 'in', 
             'de-', 'des-', 'di-', 'ekstra-', 'elektro',
-            'ipa',
-            'ikapakapagpaka', 'ikapakapagpa', 'ikapakapang', 'ikapakapag', 'ikapakapam',
+            'ipa', 'ikapakapagpaka', 'ikapakapagpa', 'ikapakapang', 'ikapakapag', 'ikapakapam',
             'ikapakapan', 'ikapagpaka', 'ikapakipan', 'ikapakipag', 'ikapakipam',
             'ikapakipa', 'ipakipag', 'ipagkang', 'ikapagpa', 'ikapaka', 'ikapaki',
             'ikapang', 'ipakipa', 'ikapag', 'ikapam', 'ikapan', 'ipagka', 'ipagpa',
@@ -46,18 +45,35 @@ class TagLemma:
             'ang', 'ng', 
             'in', 'g'
         ]
+
         self.STOP_WORDS = [
-            ''
+            'akin', 'aking', 'ako', 'alin', 'am', 'amin', 'aming', 'ang', 'ano', 'anumang',
+            'apat', 'at', 'atin', 'ating', 'ay', 'bababa', 'bago', 'bakit', 'bawat', 'bilang',
+            'dahil', 'dapat', 'din', 'dito', 'doon', 'gagawin', 'gayunman',
+            'gusto', 'habang', 'hanggang', 'hindi', 'huwag', 'iba',
+            'ibaba', 'ibabaw', 'ibig', 'ikaw', 'ilan', 'inyong', 'isa',
+            'ito', 'iyo', 'iyon', 'iyong', 'ka', 'kahit', 'kailanman', 'kami', 
+            'kanino', 'kanya', 'kanyang', 'kapag', 'katulad', 'kaya', 'kaysa', 'ko', 'kong', 'kulang', 'kung', 'lahat',
+            'lamang', 'likod', 'lima', 'maging',
+            'masyado', 'may', 'mayroon', 'mga', 'minsan', 'mismo', 'mula', 'muli', 'na',
+            'naging', 'nais', 'nakita', 'namin', 'napaka', 'narito', 'nasaan',
+            'ng', 'ngayon', 'ni', 'nila', 'nilang', 'nito', 'niya', 'niyang', 'noon', 'o', 'pa', 'pang'
+            'panahon', 'pangalawa', 'para', 'paraan', 'pareho', 'pero',
+            'sa', 'saan', 'sarili', 'sila', 'sino', 'siya', 'tatlo', 'tayo',
+            'tulad', 'tungkol', 'una', 'walang', 'ba', 'eh','kasi', 'lang','mo','naman','opo','po','si','talaga',
+            'yung', 'pwede', 'pwede', 'uli', 'makita', 'noong', 'nasa' 
         ]
 
         self.raw_lemmas = None
+        self.lemma_size = None
         self.formal_words = None
         self.to_lemmatize_tokens = None
+        self.not_to_lemmatize_tokens_index = None
         self.morpheme = None
         self.potential_lemmas = None
         self.lemmatized_text = [] 
 
-        self.input, self.output = '', ''
+        self.input, self.result = '', ''
     
     # =======================LOADING OF FILES=======================
     def load_lemma_to_dfame(self, file_path):
@@ -67,6 +83,7 @@ class TagLemma:
         df = pd.DataFrame(lines, columns=['WORDS'])
         
         self.raw_lemmas = df
+        self.lemma_size = df.shape[0]
     
     def load_formal_tagalog(self, file_path):
         with open(file_path, 'r') as file:
@@ -88,14 +105,21 @@ class TagLemma:
     # The Text Input must be Formal Tagalog Format, 
     # One Informal means Failure to Proceed to Lemmatized the Whole Text
     def validate_formal_tagalog(self, final_tokens):
-        missing_tokens = [token for token in final_tokens if token not in self.formal_words]
-        
-        if len(missing_tokens) >= 1: return (False, 'FAILED! Unable to Lemmatized the Input Text')
-        
         self.to_lemmatize_tokens = final_tokens
+        self.not_to_lemmatize_tokens_index = [final_tokens.index(token) for token in final_tokens if token not in self.formal_words and self.STOP_WORDS]
+
+        # Show the Element Using the Identified Index
+        unable_to_lemmatize = []
+        for indx in self.not_to_lemmatize_tokens_index:
+            unable_to_lemmatize.append(self.to_lemmatize_tokens[indx])
+
+        # Show the Element that can be lemmatize
+        able_to_lemmatize = [token for token in self.to_lemmatize_tokens if self.to_lemmatize_tokens.index(token) not in self.not_to_lemmatize_tokens_index]
+
+        # if len(missing_tokens) >= 1: return (False, 'FAILED! Unable to Lemmatized the Input Text')        
         
-        return (True, "SUCESS! The Input Text can be Lemmatized")
-    
+        return (True, unable_to_lemmatize, able_to_lemmatize)
+     
     # To Check Whether the Input Text is Alreadly A Lemma
     # You know, to Avoid Unecessary Further Procedure and Reduce Search Space Complexity 
     def isLemmaAlready(self, token):
@@ -143,7 +167,6 @@ class TagLemma:
     # This Code is Complicated and not Clean, but it Rightfully Serves its Purpose
     # Don't You Dare to Update this Unless Stated
     def get_morpheme(self, token):
-    
         # A Word with Deduplication in First Syllable must be Stripped One Time Only
         deduplicated_word, is_duplicated = self.remove_duplication(token)
 
@@ -154,7 +177,7 @@ class TagLemma:
 
             if not is_duplicated_non_first_syl:
                 # A Word without Deduplication at the First and Non-First Syllable must be Remove the Affxes First, 
-                # theb Proceed to Stripping of Deduplication
+                # then Proceed to Stripping of Deduplication
                 morpheme_word = self.remove_one_affix(deduplicated_word_non_first_syl)
                 morpheme_word, _temp = self.remove_duplication_non_first_syl(morpheme_word)
             else:
@@ -331,12 +354,17 @@ class TagLemma:
             (.20 * potential_lemmas['Jaccard']) + 
             (.15 * potential_lemmas['Levenshtein'])
         )
+
+        threshold_potential_lemmas = potential_lemmas[
+            (potential_lemmas['Cosine Similarity'] >= 0.80)
+        ]
     
-        return potential_lemmas
+        return threshold_potential_lemmas
     
     def show_best_lemma(self, potential_lemmas):
         if not potential_lemmas.empty: 
             sorted_lemmas = potential_lemmas.sort_values(by='Rank Scores', ascending=False)
+            sorted_lemmas = sorted_lemmas.head(10)
             print("Rank ed Scored Lemmas: ", sorted_lemmas)
             return sorted_lemmas.iloc[0]['WORDS']
 
@@ -345,58 +373,97 @@ class TagLemma:
    # =======================MAIN PROCESS OF LEMMATIZATION=======================
     def lemmatize(self, input_text):
         # Tokenized, Removed Stop Words and Validate the Input Text
-        tokenized = self.tokenize_input_text(input_text)
-        print("Tokenized Input Text:")
-        print(tokenized)
-
-        removed_sw = self.remove_stop_words(tokenized) 
+        self.input = input_text
+        tokenized = self.tokenize_input_text(input_text.lower())
+        print('')
+        print('=========================Tokenized Tagalog Text=========================')
+        print("\nTokenized Input Text:")
+        print(tokenized, "\n")
+        print('========================================================================')
+        print('')
+        
+        """removed_sw = self.remove_stop_words(tokenized) 
         print("After Removing Stop Words:")
-        print(removed_sw)
+        print(removed_sw, "\n")
+        """
+    
+        isValidated = self.validate_formal_tagalog(tokenized)
 
-        isValidated = self.validate_formal_tagalog(removed_sw)
-        print("Result for Validating Formal Tagalog: ")
-        print(isValidated[0], isValidated[1])
+        print('')
+        print('=========================Validate Token if Formal Tagalog Word=========================')
+        print("\nResult for Validating Formal Tagalog: ")
+        print('Valid Tokens: ', isValidated[2])
+        print('Invalid Tokens: ', isValidated[1], '\n')
+        print('=======================================================================================')
+        print('')
+
+
+        print('')
+        print('=================================Lemmatization Process=================================')
         while isValidated[0]:
             # Lemmatized Each Tokens and Return the Lemma after
-            print("About to lemmatize: ", self.to_lemmatize_tokens)
-            for token in self.to_lemmatize_tokens:
-                print("Token to Lem: ", token)
+            #print("About to lemmatize: ", self.to_lemmatize_tokens, "\n")
+            for token in self.to_lemmatize_tokens:  
+                print("Token to Lem: ", token, "\n")
 
-                # The Current Token Should not be in Lemma Form in Order to Lemmatize
-                if self.isLemmaAlready(token) is False:
-                    # Pre-processing Stage
-                    morpheme = self.get_morpheme(token)
-                    print("Extracted Morpheme: ", morpheme)
-                    
-                    potential_lemmas = self.get_potential_lemmas(token, morpheme)
-                    print("Potential Lemmas: ", potential_lemmas)
+                if self.to_lemmatize_tokens.index(token) not in self.not_to_lemmatize_tokens_index:
 
-                    # Secret Move: If Letter D is Last
-                    if 'd' in token[-1]:
-                        token = self.alternate_morphophonemic_rd(token)
-                        print("Translated Token's Morphophonemic: ", token)
+                    # The Current Token Should not be in Lemma Form in Order to Lemmatize
+                    if self.isLemmaAlready(token) is False:
+                        # Pre-processing Stage
+                        morpheme = self.get_morpheme(token)
+                        print("Extracted Morpheme: ", morpheme, "\n")
+                        
+                   
+                        potential_lemmas = self.get_potential_lemmas(token, morpheme)
+                        print("Total Words in Dict: ", self.lemma_size)
+                        print("Total Number of Potential Lemmas: ", potential_lemmas.shape[0])
+                        print("Potential Lemma/s: \n", potential_lemmas, "\n")
 
-                    # Perform Fuzzy Matcing Algorithm to Lemmatize Token
-                    fuzzy_potential_lemmas = self.fuzzy_matching(token, potential_lemmas)
-                    best_lemma = self.show_best_lemma(fuzzy_potential_lemmas)
+                        # Whenever there are no potential lemmas found, append the normal token instead
+                        if potential_lemmas.empty: best_lemma = token
+                        
+                        # Secret Move: If Letter D is Last
+                        if 'd' in token[-1]:
+                            token = self.alternate_morphophonemic_rd(token)
 
-                    self.lemmatized_text.append(best_lemma)
+                        # Perform Fuzzy Matcing Algorithm to Lemmatize Token
+                        fuzzy_potential_lemmas = self.fuzzy_matching(token, potential_lemmas)
+                        best_lemma = self.show_best_lemma(fuzzy_potential_lemmas)
+
+                        self.lemmatized_text.append(best_lemma)
+                    else:
+                        self.lemmatized_text.append(token)
+
                 else:
                     self.lemmatized_text.append(token)
-            
+                
             break
         
         temp = ''
         for word in self.lemmatized_text:
             temp += word + ' '
 
-        result = temp.strip()
-        print("\nLemmatized Text: ", result)
+        self.result = temp.strip()
+        print('======================================================================================')
+        print('')
+
+
+        print("==================================LEMMATIZATION===============================")
+        print("\nInput Tagalog Text: ", self.input)
+        print("\nLemmatized Text: ", self.result)
+        print("==============================================================================")
+
+        self.lemmatized_text = []
 
 # Test
 t = TagLemma()
  # Load All Resources for Lemmatization 
 t.load_lemma_to_dfame('tagalog_lemmas.txt')
-t.load_formal_tagalog('formal_tagalog.txt') 
-input_text = input("Enter Formal Tagalog Text to Lemmatize: ")
-t.lemmatize(input_text)
+t.load_formal_tagalog('formal_tagalog.txt')
+
+while True: 
+    input_text = input("Enter Formal Tagalog Text to Lemmatize:")
+    if input_text == '0': break
+    t.lemmatize(input_text)
+
