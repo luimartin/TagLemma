@@ -447,13 +447,9 @@ class TagLemma:
         self.result = temp.strip()
         print('======================================================================================')
         print('')
-
-
         print("==================================LEMMATIZATION===============================")
         print("\nInput Tagalog Text: ", self.input)
         print("\nLemmatized Text: ", self.result)
         print("==============================================================================")
 
         self.lemmatized_text = []
-
-

@@ -1,5 +1,6 @@
 from designUI import Ui_MainWindow
 import sys
+import TagLemma
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtWidgets import QMainWindow, QApplication, QSizePolicy
 
@@ -8,14 +9,22 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+
+
+        self.t = TagLemma.TagLemma()
+        self.t.load_lemma_to_dfame('tagalog_lemmas.txt')
+        self.t.load_formal_tagalog('formal_tagalog.txt')
+        
+        
         label_height = 65
         self.label.setFixedHeight(label_height)
         self.label_2.setFixedHeight(label_height)
-        
+        self.input.setPlaceholderText('Enter Formal Tagalog Text to Lemmatize...')
+        self.result.setPlaceholderText("Lemmatize Tagalog Words Here")
         # CSS for MainWindow
         self.setStyleSheet("""
             QWidget{ background: #FDFDFD; } 
-            QTextEdit{ background: #FAF9F6; border: 2px solid black; border-radius: 10px}
+            QTextEdit{ background: #FAF9F6; border: 2px solid black; border-radius: 10px; color: black}
             QPushButton { border: 2px solid black; background: #FAF9F6 ;border-radius: 10px;}\
             QPushButton:hover { background: #E0DED9;}
             QPushButton:pressed { background: #C0BEB8;  border-color: #5E5E5E}""")
@@ -32,8 +41,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         
         # click handler for clear button
         self.clear_button.clicked.connect(self.clear)
-        
-        self.input
+        self.lemmatize_button.clicked.connect(self.lemmatize)
 
         self.result.setEnabled(False)
         
@@ -44,7 +52,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         print("Cleared")
     
     def lemmatize(self):
-        print("asd")
+        self.t.lemmatize(self.input.toPlainText())
+        self.result.setText(self.t.result)
 
 app = QApplication(sys.argv)
 window = MainMenu()
