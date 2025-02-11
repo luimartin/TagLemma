@@ -365,7 +365,7 @@ class TagLemma:
         if not potential_lemmas.empty: 
             sorted_lemmas = potential_lemmas.sort_values(by='Rank Scores', ascending=False)
             sorted_lemmas = sorted_lemmas.head(10)
-            print("Rank ed Scored Lemmas: ", sorted_lemmas)
+            #print("Rank ed Scored Lemmas: ", sorted_lemmas)
             return sorted_lemmas.iloc[0]['WORDS']
 
         return self.morpheme
@@ -447,8 +447,6 @@ class TagLemma:
         self.result = temp.strip()
         print('======================================================================================')
         print('')
-
-
         print("==================================LEMMATIZATION===============================")
         print("\nInput Tagalog Text: ", self.input)
         print("\nLemmatized Text: ", self.result)
@@ -456,4 +454,49 @@ class TagLemma:
 
         self.lemmatized_text = []
 
+
+    def lemmatize_no_print(self, input_text):
+            # Tokenized, Removed Stop Words and Validate the Input Text
+            self.input = input_text
+            tokenized = self.tokenize_input_text(input_text.lower())
+        
+            isValidated = self.validate_formal_tagalog(tokenized)
+
+            while isValidated[0]:
+                # Lemmatized Each Tokens and Return the Lemma after
+                #print("About to lemmatize: ", self.to_lemmatize_tokens, "\n")
+                for token in self.to_lemmatize_tokens:  
+                    if self.to_lemmatize_tokens.index(token) not in self.not_to_lemmatize_tokens_index:
+
+                        # The Current Token Should not be in Lemma Form in Order to Lemmatize
+                        if self.isLemmaAlready(token) is False:
+                            # Pre-processing Stage
+                            morpheme = self.get_morpheme(token)
+                            potential_lemmas = self.get_potential_lemmas(token, morpheme)
+                            # Whenever there are no potential lemmas found, append the normal token instead
+                            if potential_lemmas.empty: best_lemma = token
+                            
+                            # Secret Move: If Letter D is Last
+                            if 'd' in token[-1]:
+                                token = self.alternate_morphophonemic_rd(token)
+
+                            # Perform Fuzzy Matcing Algorithm to Lemmatize Token
+                            fuzzy_potential_lemmas = self.fuzzy_matching(token, potential_lemmas)
+                            best_lemma = self.show_best_lemma(fuzzy_potential_lemmas)
+
+                            self.lemmatized_text.append(best_lemma)
+                        else:
+                            self.lemmatized_text.append(token)
+
+                    else:
+                        self.lemmatized_text.append(token)
+                    
+                break            
+            temp = ''
+            for word in self.lemmatized_text:
+                temp += word + ' '
+
+            self.result = temp.strip()
+            return(self.result)
+            #self.lemmatized_text = []
 
