@@ -72,7 +72,8 @@ class TagLemma:
         self.morpheme = None
         self.potential_lemmas = None
         self.lemmatized_text = [] 
-
+        self.valid_tokens = None #forda UI
+        self.lemma = [] #forda UI
         self.input, self.result = '', ''
     
     # =======================LOADING OF FILES=======================
@@ -365,7 +366,7 @@ class TagLemma:
         if not potential_lemmas.empty: 
             sorted_lemmas = potential_lemmas.sort_values(by='Rank Scores', ascending=False)
             sorted_lemmas = sorted_lemmas.head(10)
-            #print("Rank ed Scored Lemmas: ", sorted_lemmas)
+            print("Rank ed Scored Lemmas: ", sorted_lemmas)
             return sorted_lemmas.iloc[0]['WORDS']
 
         return self.morpheme
@@ -388,7 +389,8 @@ class TagLemma:
         """
     
         isValidated = self.validate_formal_tagalog(tokenized)
-
+        self.valid_tokens = isValidated[2]
+        print(type(self.valid_tokens))
         print('')
         print('=========================Validate Token if Formal Tagalog Word=========================')
         print("\nResult for Validating Formal Tagalog: ")
@@ -432,6 +434,7 @@ class TagLemma:
                         best_lemma = self.show_best_lemma(fuzzy_potential_lemmas)
 
                         self.lemmatized_text.append(best_lemma)
+                        self.lemma.append(best_lemma)
                     else:
                         self.lemmatized_text.append(token)
 
@@ -461,7 +464,7 @@ class TagLemma:
             tokenized = self.tokenize_input_text(input_text.lower())
         
             isValidated = self.validate_formal_tagalog(tokenized)
-
+            self.valid_tokens = isValidated[2]
             while isValidated[0]:
                 # Lemmatized Each Tokens and Return the Lemma after
                 #print("About to lemmatize: ", self.to_lemmatize_tokens, "\n")
@@ -485,6 +488,7 @@ class TagLemma:
                             best_lemma = self.show_best_lemma(fuzzy_potential_lemmas)
 
                             self.lemmatized_text.append(best_lemma)
+                            self.lemma.append(best_lemma)
                         else:
                             self.lemmatized_text.append(token)
 
@@ -497,6 +501,6 @@ class TagLemma:
                 temp += word + ' '
 
             self.result = temp.strip()
-            return(self.result)
             #self.lemmatized_text = []
+            return(self.result, self.lemma)
 
