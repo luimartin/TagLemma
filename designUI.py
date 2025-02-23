@@ -24,12 +24,12 @@ class Ui_MainWindow(object):
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setSpacing(10)
 
-        self.input = QtWidgets.QTextEdit(self.centralwidget)
+        self.input = QtWidgets.QPlainTextEdit(self.centralwidget)
         self.input.setObjectName("input")
         self.input.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         self.verticalLayout_2.addWidget(self.input)
 
-        self.result = QtWidgets.QTextEdit(self.centralwidget)
+        self.result = QtWidgets.QPlainTextEdit(self.centralwidget)
         self.result.setObjectName("result")
         self.result.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         self.verticalLayout_2.addWidget(self.result)
