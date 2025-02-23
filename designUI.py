@@ -72,7 +72,17 @@ class Ui_MainWindow(object):
         self.lemma_button.setObjectName("lemma_button")
         self.lemma_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         self.verticalLayout.addWidget(self.lemma_button)
-
+        
+        self.pdf_button = QtWidgets.QPushButton(self.centralwidget)
+        self.pdf_button.setObjectName("pdf_button")
+        self.pdf_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
+        self.verticalLayout.addWidget(self.pdf_button)
+        """
+        self.preview_button = QtWidgets.QPushButton(self.centralwidget)
+        self.preview_button.setObjectName("preview_button")
+        self.preview_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
+        self.verticalLayout.addWidget(self.preview_button)
+        """
         self.horizontalLayout.addLayout(self.verticalLayout, 1)  # Takes 1 part of space
 
         MainWindow.setCentralWidget(self.centralwidget)
@@ -89,3 +99,5 @@ class Ui_MainWindow(object):
             self.token_button.setText(_translate("MainWindow", "Token"))
             self.process_button.setText(_translate("MainWindow", "Process"))
             self.lemma_button.setText(_translate("MainWindow", "Lemma"))
+            self.pdf_button.setText(_translate("MainWindow", "PDF"))
+            #self.preview_button.setText(_translate("MainWindow", "Preview"))
