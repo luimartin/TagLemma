@@ -21,7 +21,7 @@ class pdf(FPDF):
         # Set position of the footer
         self.set_y(-15)
         # set font
-        self.set_font('helvetica', 'I', 8)
+        self.set_font('helvetica', 'I', 12)
         # Set font color grey
         self.set_text_color(169,169,169)
         # Page number

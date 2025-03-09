@@ -73,6 +73,7 @@ class TagLemma:
         self.potential_lemmas = None
         self.lemmatized_text = [] 
         self.valid_tokens = None #forda UI
+        self.invalid_tokens = None #forda UI
         self.lemma = [] #forda UI
         self.input, self.result = '', ''
     
@@ -462,9 +463,10 @@ class TagLemma:
             # Tokenized, Removed Stop Words and Validate the Input Text
             self.input = input_text
             tokenized = self.tokenize_input_text(input_text.lower())
-        
+            removed_sw = self.remove_stop_words(tokenized) 
             isValidated = self.validate_formal_tagalog(tokenized)
             self.valid_tokens = isValidated[2]
+            self.invalid_tokens = isValidated[1]
             while isValidated[0]:
                 # Lemmatized Each Tokens and Return the Lemma after
                 #print("About to lemmatize: ", self.to_lemmatize_tokens, "\n")
