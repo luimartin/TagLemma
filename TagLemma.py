@@ -67,15 +67,19 @@ class TagLemma:
         self.raw_lemmas = None
         self.lemma_size = None
         self.formal_words = None
+        self.found_stop_words = None
         self.to_lemmatize_tokens = None
         self.not_to_lemmatize_tokens_index = None
         self.morpheme = None
+        self.list_of_morphemes = []
+        self.list_of_lemmatizable_tokens = []
         self.potential_lemmas = None
         self.lemmatized_text = [] 
         self.valid_tokens = None #forda UI
-        self.invalid_tokens = None #forda UI
         self.lemma = [] #forda UI
+        self.annotated_lemma = {}
         self.input, self.result = '', ''
+
     
     # =======================LOADING OF FILES=======================
     def load_lemma_to_dfame(self, file_path):
@@ -102,8 +106,10 @@ class TagLemma:
         return tokens
     
     def remove_stop_words(self, input_tokens):
-        return [token for token in input_tokens if token not in self.STOP_WORDS]
-    
+        self.found_stop_words = [token for token in input_tokens if token in self.STOP_WORDS]
+
+        cleaned_tokens = [token for token in input_tokens if token not in self.STOP_WORDS]
+        return cleaned_tokens
     # The Text Input must be Formal Tagalog Format, 
     # One Informal means Failure to Proceed to Lemmatized the Whole Text
     def validate_formal_tagalog(self, final_tokens):
@@ -189,6 +195,8 @@ class TagLemma:
             morpheme_word = deduplicated_word
 
         self.morpheme = morpheme_word
+
+        self.list_of_morphemes.append(morpheme_word)
 
         return morpheme_word
 
@@ -371,6 +379,21 @@ class TagLemma:
             return sorted_lemmas.iloc[0]['WORDS']
 
         return self.morpheme
+    
+    def annotate(self, inf_input, lemm_output):
+        if lemm_output in self.annotated_lemma:
+            if inf_input not in self.annotated_lemma[lemm_output]:
+                self.annotated_lemma[lemm_output].append(inf_input)
+        else:
+            self.annotated_lemma[lemm_output] = [inf_input]
+    
+    def show_annotation(self):
+        return self.annotated_lemma
+    
+    def show_inflection_and_morpheme(self):
+        for i in range(len(self.list_of_lemmatizable_tokens)):     
+                print(f"{self.list_of_lemmatizable_tokens[i]} -> {self.list_of_morphemes[i]}")
+            
         
    # =======================MAIN PROCESS OF LEMMATIZATION=======================
     def lemmatize(self, input_text):
@@ -406,13 +429,17 @@ class TagLemma:
         while isValidated[0]:
             # Lemmatized Each Tokens and Return the Lemma after
             #print("About to lemmatize: ", self.to_lemmatize_tokens, "\n")
-            for token in self.to_lemmatize_tokens:  
+            for token in self.to_lemmatize_tokens: 
+                inf_input = token 
                 print("Token to Lem: ", token, "\n")
 
                 if self.to_lemmatize_tokens.index(token) not in self.not_to_lemmatize_tokens_index:
 
                     # The Current Token Should not be in Lemma Form in Order to Lemmatize
                     if self.isLemmaAlready(token) is False:
+                        # Insert lemmatizable token
+                        self.list_of_lemmatizable_tokens.append(token)
+
                         # Pre-processing Stage
                         morpheme = self.get_morpheme(token)
                         print("Extracted Morpheme: ", morpheme, "\n")
@@ -436,6 +463,7 @@ class TagLemma:
 
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
+                        self.annotate(inf_input, best_lemma)
                     else:
                         self.lemmatized_text.append(token)
 
@@ -463,10 +491,9 @@ class TagLemma:
             # Tokenized, Removed Stop Words and Validate the Input Text
             self.input = input_text
             tokenized = self.tokenize_input_text(input_text.lower())
-            removed_sw = self.remove_stop_words(tokenized) 
+        
             isValidated = self.validate_formal_tagalog(tokenized)
             self.valid_tokens = isValidated[2]
-            self.invalid_tokens = isValidated[1]
             while isValidated[0]:
                 # Lemmatized Each Tokens and Return the Lemma after
                 #print("About to lemmatize: ", self.to_lemmatize_tokens, "\n")
@@ -506,3 +533,10 @@ class TagLemma:
             #self.lemmatized_text = []
             return(self.result, self.lemma)
 
+t = TagLemma()
+str_input = "Ako ay kumakain ng pagkain habang pinanonood ang palabas sa telebisyon"
+t.load_lemma_to_dfame('tagalog_lemmas.txt')
+t.load_formal_tagalog('formal_tagalog_sorted.txt')
+t.lemmatize(str_input)
+print(t.show_annotation())
+t.show_inflection_and_morpheme()
