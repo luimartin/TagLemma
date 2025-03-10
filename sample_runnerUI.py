@@ -1,5 +1,5 @@
-from ui import Ui_MainWindow
-from PyQt6.QtWidgets import QMainWindow, QApplication,QMessageBox , QSizePolicy, QFileDialog, QProgressDialog, QLabel
+from sampleUI import Ui_MainWindow
+from PyQt6.QtWidgets import QMainWindow, QApplication,QMessageBox , QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox
 from PyQt6.QtCore import QThread, pyqtSignal, Qt
 import sys
 import pdf
@@ -14,8 +14,6 @@ page indexing
 4 annotaitonPage
 """
 # async functionality for lemmas if ever the process takes to long...
-
-
 class LemmatizeThread(QThread):
     # Signal to send the result back to the main thread
     #update this shit if u want to add the variable to be send to the UI
@@ -41,7 +39,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.setMinimumSize(1078, 565)
+        
         self.headerWidget.setMinimumHeight(100)
         # set the size for the btns in landing page
         self.lemmaBtn.setSizePolicy(
@@ -53,14 +51,16 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.processBtn.setSizePolicy(
             QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         
+    
+
         #labels for character count in text edits 
         #this shit is added in the UI
-        """self.inputLabelChar = QLabel(self.widget1)
+        self.inputLabelChar = QLabel(parent=self.lemmaPage)
         self.inputLabelChar.setObjectName("inputLabelChar")
         self.inputLabelChar.setText("Character: 0")
         self.verticalLayout.addWidget(self.inputLabelChar)
     
-        self.resultLabelChar = QLabel(self.widget1)
+        self.resultLabelChar = QLabel(parent=self.lemmaPage)
         self.resultLabelChar.setObjectName("resultLabelChar")
         self.resultLabelChar.setText("Character: 0")
         self.verticalLayout_2.addWidget(self.resultLabelChar)
@@ -68,7 +68,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         #updates label for char count
         self.inputText.textChanged.connect(self.update_input_label)
         self.resultText.textChanged.connect(self.update_result_label)
-"""
+
 
         # stacked widget pages connectoers
         self.featureBtn.clicked.connect(self.switch_to_feature)

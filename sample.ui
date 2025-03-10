@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1078</width>
+    <width>1073</width>
     <height>571</height>
    </rect>
   </property>
@@ -32,7 +32,7 @@
        <rect>
         <x>30</x>
         <y>30</y>
-        <width>1021</width>
+        <width>1011</width>
         <height>431</height>
        </rect>
       </property>
@@ -72,10 +72,10 @@
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>20</y>
-        <width>1041</width>
-        <height>461</height>
+        <x>30</x>
+        <y>30</y>
+        <width>1011</width>
+        <height>431</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -134,6 +134,25 @@
           </widget>
          </item>
          <item>
+          <widget class="QComboBox" name="comboBox">
+           <item>
+            <property name="text">
+             <string>Default</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Exclude invalid words on result</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Exclude stop words on result</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
@@ -169,10 +188,10 @@
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>10</y>
-        <width>1031</width>
-        <height>461</height>
+        <x>30</x>
+        <y>30</y>
+        <width>1011</width>
+        <height>431</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -236,16 +255,19 @@
      </widget>
     </widget>
     <widget class="QWidget" name="processPage">
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
-        <x>21</x>
-        <y>21</y>
-        <width>1031</width>
-        <height>451</height>
+        <x>31</x>
+        <y>31</y>
+        <width>1011</width>
+        <height>431</height>
        </rect>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <property name="spacing">
+        <number>18</number>
+       </property>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_7">
          <item>
@@ -297,9 +319,9 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="morphBtn">
+          <widget class="QPushButton" name="fuzzyBtn">
            <property name="text">
-            <string>Morphological Stripping</string>
+            <string>Fuzzy Matching</string>
            </property>
           </widget>
          </item>
@@ -309,6 +331,19 @@
             <string>Lemma Ranking</string>
            </property>
           </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>
@@ -321,8 +356,8 @@
        <rect>
         <x>30</x>
         <y>30</y>
-        <width>1021</width>
-        <height>421</height>
+        <width>1011</width>
+        <height>431</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_6">
