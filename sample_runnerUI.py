@@ -4,7 +4,8 @@ from PyQt6.QtCore import QThread, pyqtSignal, Qt
 import sys
 import pdf
 import TagLemma
-
+import fitz
+import docx
 """
 page indexing
 0 featurepage
@@ -17,7 +18,7 @@ page indexing
 class LemmatizeThread(QThread):
     # Signal to send the result back to the main thread
     #update this shit if u want to add the variable to be send to the UI
-    finished = pyqtSignal(str, list, list, list)
+    finished = pyqtSignal(str, list, list, list, list, list)
 
     def __init__(self, text):
         super().__init__()
@@ -30,9 +31,10 @@ class LemmatizeThread(QThread):
         result, lemmas = self.t.lemmatize_no_print(self.text)
         valid_tokens = self.t.valid_tokens
         invalid_tokens = self.t.invalid_tokens
-
+        tokenized = self.t.tokenized
+        morphemes = self.t.show_inflection_and_morpheme()
         # To be send to the main UI sadhkjasdhas
-        self.finished.emit(result, valid_tokens, lemmas, invalid_tokens)
+        self.finished.emit(result, valid_tokens, lemmas, invalid_tokens, tokenized, morphemes)
 
 
 class MainMenu(QMainWindow, Ui_MainWindow):
@@ -87,6 +89,17 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         # validationPage button connectors
         self.validTokenBtn.clicked.connect(self.valid_tokens_function)
         self.invalidTokenBtn.clicked.connect(self.invalid_tokens_function)
+        self.comboBox.setEnabled(False)
+        #combobox 
+        self.comboBox.currentIndexChanged.connect(self.combo_box_changed)
+
+        #import file parse to textfield
+        self.importBtn.clicked.connect(self.load_file)
+
+
+        #processPage button connectors
+        self.tokenizationBtn.clicked.connect(self.get_tokenized)
+        self.morphemeBtn.clicked.connect(self.display_morphemes)
 
     # function connectors for stacked widget
     def switch_to_feature(self):
@@ -100,7 +113,18 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     def switch_to_annotation(self):
         self.stackedWidget.setCurrentIndex(4)
 
+    def combo_box_changed(self,i):
+        if i == 0:
+            self.resultText.setPlainText(self.result)
+        elif i == 1:
+            result_str = " ".join(self.lemmas)
+            self.resultText.setPlainText(result_str)
+        else:
+            self.resultText.setPlainText("(====3")
+
     def clear(self):
+        self.comboBox.setCurrentIndex(0)
+        self.comboBox.setEnabled(False)
         self.inputText.clear()
         self.resultText.clear()
         print("Cleared")
@@ -114,7 +138,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             return  
 
         self.resultText.setPlainText("Please Wait, Currently Lemmatizing.....")
-        
+        self.comboBox.setCurrentIndex(0)
         """
         self.progressDialog = QProgressDialog(
             "Lemmatizing...", "Cancel", 0, 0, self)
@@ -132,25 +156,47 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.thread.start()
 
     # update UI from another threadsasdasd
-    def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens):
-        #Updates the UI with the lemmatized text after processing
+    def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens, tokenized, morphemes):
+        #Updates the UI with the lemmatized text and other shits after processing
         self.valid_tokens = valid_tokens
         self.lemmas = lemmas
         self.invalid_tokens = invalid_tokens
-        self.resultText.setPlainText(result)
+        self.result = result #store the lemma
+        self.tokenized = tokenized
+        self.morphemes = morphemes
+        self.resultText.setPlainText(self.result )
         self.thread = None
+        self.comboBox.setEnabled(True)
         #self.progressDialog.close()
 
     def valid_tokens_function(self):
         print(self.valid_tokens)
         result_str = ", ".join(self.valid_tokens)
+
+        if not result_str.strip():
+            # # handols empty inputs nyork
+            self.message_dialog(QMessageBox.Icon.Information,"There was no valid tokens", "Notice")
+            return  
         self.validText.setPlainText(result_str) 
 
     def invalid_tokens_function(self):
         print(self.invalid_tokens)
+        
         result_str = ", ".join(self.invalid_tokens)
+
+        if not result_str.strip():
+            # # handols empty inputs nyork
+            self.message_dialog(QMessageBox.Icon.Information,"There was no invalid tokens", "Notice")
+            return  
+        
         self.validText.setPlainText(result_str) 
     
+    #Exclude invalid words on result & Exclude stop words on result
+    def lemma(self):    
+        print(self.lemmas)
+        result_str = " ".join(self.lemmas)
+        self.resultText.setPlainText(result_str)
+
     def pdf(self):
         if self.resultText.toPlainText():
             # Open "Save As" dialog for user to choose save location
@@ -192,7 +238,40 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         x = len(self.resultText.toPlainText())
         self.resultLabelChar.setText(f"Characters: {x}")
 
+    def get_tokenized(self):
+        print("tokenzide")
+        result_str = ", ".join(self.tokenized)
+        self.processText.setPlainText(f'Tokens = {result_str}',)
+        self.processText
 
+    def display_morphemes(self):
+        result_str = "\n".join(self.morphemes)
+        self.processText.setPlainText(result_str)
+
+
+# parse file to be refactored.... 
+    def load_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "PDF Files (*.pdf);;Word Files (*.docx)")
+        if file_path:
+            text = self.parse_file(file_path)
+            self.inputText.setPlainText(text)
+
+    def parse_file(self, file_path):
+        if file_path.endswith(".pdf"):
+            return self.parse_pdf(file_path)
+        elif file_path.endswith(".docx"):
+            return self.parse_docx(file_path)
+        return "Unsupported file format."
+
+    def parse_pdf(self, file_path):
+        doc = fitz.open(file_path)
+        text = "".join([page.get_text("text") for page in doc])
+        return text
+
+    def parse_docx(self, file_path):
+        doc = docx.Document(file_path)
+        text = "\n".join([para.text for para in doc.paragraphs])
+        return text
 
 app = QApplication(sys.argv)
 window = MainMenu()
