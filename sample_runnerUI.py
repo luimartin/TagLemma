@@ -1,5 +1,5 @@
 from sampleUI import Ui_MainWindow
-from PyQt6.QtWidgets import QMainWindow, QApplication,QMessageBox , QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox
+from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox
 from PyQt6.QtCore import QThread, pyqtSignal, Qt
 import sys
 import pdf
@@ -14,16 +14,20 @@ page indexing
 3 processPage
 4 annotaitonPage
 """
+#For The UI components, it uses : camelCase
+#For The UI behavior and function, it uses snake-case
+
+
 # async functionality for lemmas if ever the process takes to long...
 class LemmatizeThread(QThread):
     # Signal to send the result back to the main thread
-    #update this shit if u want to add the variable to be send to the UI
-    finished = pyqtSignal(str, list, list, list, list, list)
+    # update this shit if u want to add the variable to be send to the UI
+    finished = pyqtSignal(str, list, list, list, list, list, list, list)
 
     def __init__(self, text):
         super().__init__()
         self.text = text
-    
+
     def run(self):
         self.t = TagLemma.TagLemma()
         self.t.load_lemma_to_dfame('tagalog_lemmas.txt')
@@ -32,16 +36,19 @@ class LemmatizeThread(QThread):
         valid_tokens = self.t.valid_tokens
         invalid_tokens = self.t.invalid_tokens
         tokenized = self.t.tokenized
+        result_removed_sw = self.t.result_removed_sw
         morphemes = self.t.show_inflection_and_morpheme()
+        exclude_invalid = self.t.exclude_invalid()
         # To be send to the main UI sadhkjasdhas
-        self.finished.emit(result, valid_tokens, lemmas, invalid_tokens, tokenized, morphemes)
+        self.finished.emit(result, valid_tokens, lemmas,
+            invalid_tokens, tokenized, morphemes, result_removed_sw, exclude_invalid )
 
 
 class MainMenu(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        
+
         self.headerWidget.setMinimumHeight(100)
         # set the size for the btns in landing page
         self.lemmaBtn.setSizePolicy(
@@ -52,25 +59,23 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.processBtn.setSizePolicy(
             QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        
-    
 
-        #labels for character count in text edits 
-        #this shit is added in the UI
+        # labels for character count in text edits
+        # this shit is added in the UI
         self.inputLabelChar = QLabel(parent=self.lemmaPage)
         self.inputLabelChar.setObjectName("inputLabelChar")
         self.inputLabelChar.setText("Character: 0")
         self.verticalLayout.addWidget(self.inputLabelChar)
-    
+
         self.resultLabelChar = QLabel(parent=self.lemmaPage)
         self.resultLabelChar.setObjectName("resultLabelChar")
         self.resultLabelChar.setText("Character: 0")
         self.verticalLayout_2.addWidget(self.resultLabelChar)
-        
-        #updates label for char count
+
+        self.disable_features(False)
+        # updates label for char count
         self.inputText.textChanged.connect(self.update_input_label)
         self.resultText.textChanged.connect(self.update_result_label)
-
 
         # stacked widget pages connectoers
         self.featureBtn.clicked.connect(self.switch_to_feature)
@@ -90,41 +95,53 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.validTokenBtn.clicked.connect(self.valid_tokens_function)
         self.invalidTokenBtn.clicked.connect(self.invalid_tokens_function)
         self.comboBox.setEnabled(False)
-        #combobox 
+        # combobox
         self.comboBox.currentIndexChanged.connect(self.combo_box_changed)
 
-        #import file parse to textfield
+        # import file parse to textfield
         self.importBtn.clicked.connect(self.load_file)
 
-
-        #processPage button connectors
+        # processPage button connectors
         self.tokenizationBtn.clicked.connect(self.get_tokenized)
         self.morphemeBtn.clicked.connect(self.display_morphemes)
 
     # function connectors for stacked widget
     def switch_to_feature(self):
         self.stackedWidget.setCurrentIndex(0)
+
     def switch_to_lemma(self):
         self.stackedWidget.setCurrentIndex(1)
+
     def switch_to_validation(self):
         self.stackedWidget.setCurrentIndex(2)
+
     def switch_to_process(self):
         self.stackedWidget.setCurrentIndex(3)
+
     def switch_to_annotation(self):
         self.stackedWidget.setCurrentIndex(4)
 
-    def combo_box_changed(self,i):
+    def combo_box_changed(self, i):
         if i == 0:
             self.resultText.setPlainText(self.result)
         elif i == 1:
-            result_str = " ".join(self.lemmas)
+            result_str = " ".join(self.exclude_invalid)
             self.resultText.setPlainText(result_str)
         else:
-            self.resultText.setPlainText("(====3")
+            result_str = " ".join(self.result_removed_sw)
+            self.resultText.setPlainText(result_str)
+
+    # this disable other features of the system when the no lemmatization has occurs first
+    def disable_features(self, bol):
+        self.validationBtn.setEnabled(bol)
+        self.annotationBtn.setEnabled(bol)
+        self.processBtn.setEnabled(bol)
+            
 
     def clear(self):
         self.comboBox.setCurrentIndex(0)
         self.comboBox.setEnabled(False)
+        self.disable_features(False)
         self.inputText.clear()
         self.resultText.clear()
         print("Cleared")
@@ -134,8 +151,9 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         text = self.inputText.toPlainText()
         if not text.strip():
             # # handols empty inputs nyork
-            self.message_dialog(QMessageBox.Icon.Warning,"Please Input...", "Warning")
-            return  
+            self.message_dialog(QMessageBox.Icon.Warning,
+                                "Please Input...", "Warning")
+            return
 
         self.resultText.setPlainText("Please Wait, Currently Lemmatizing.....")
         self.comboBox.setCurrentIndex(0)
@@ -156,18 +174,22 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.thread.start()
 
     # update UI from another threadsasdasd
-    def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens, tokenized, morphemes):
-        #Updates the UI with the lemmatized text and other shits after processing
+    def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens, 
+            tokenized, morphemes,result_removed_sw, exclude_invalid):
+        # Updates the UI with the lemmatized text and other shits after processing
         self.valid_tokens = valid_tokens
         self.lemmas = lemmas
         self.invalid_tokens = invalid_tokens
-        self.result = result #store the lemma
+        self.result = result  # store the lemma
         self.tokenized = tokenized
         self.morphemes = morphemes
-        self.resultText.setPlainText(self.result )
+        self.result_removed_sw = result_removed_sw
+        self.exclude_invalid = exclude_invalid
+        self.resultText.setPlainText(self.result)
         self.thread = None
         self.comboBox.setEnabled(True)
-        #self.progressDialog.close()
+        self.disable_features(True)
+        # self.progressDialog.close()
 
     def valid_tokens_function(self):
         print(self.valid_tokens)
@@ -175,24 +197,26 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
         if not result_str.strip():
             # # handols empty inputs nyork
-            self.message_dialog(QMessageBox.Icon.Information,"There was no valid tokens", "Notice")
-            return  
-        self.validText.setPlainText(result_str) 
+            self.message_dialog(QMessageBox.Icon.Information,
+                                "There was no valid tokens", "Notice")
+            return
+        self.validText.setPlainText(result_str)
 
     def invalid_tokens_function(self):
         print(self.invalid_tokens)
-        
+
         result_str = ", ".join(self.invalid_tokens)
 
         if not result_str.strip():
             # # handols empty inputs nyork
-            self.message_dialog(QMessageBox.Icon.Information,"There was no invalid tokens", "Notice")
-            return  
-        
-        self.validText.setPlainText(result_str) 
-    
-    #Exclude invalid words on result & Exclude stop words on result
-    def lemma(self):    
+            self.message_dialog(QMessageBox.Icon.Information,
+                                "There was no invalid tokens", "Notice")
+            return
+
+        self.validText.setPlainText(result_str)
+
+    # Exclude invalid words on result & Exclude stop words on result
+    def lemma(self):
         print(self.lemmas)
         result_str = " ".join(self.lemmas)
         self.resultText.setPlainText(result_str)
@@ -210,7 +234,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 # printing process
                 page.add_list("Input:")
                 page.add_list(self.inputText.toPlainText())
-                
+
                 page.add_list("")
                 page.add_list("")
                 page.add_list("Output:")
@@ -220,7 +244,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         else:
             print("No text to save")
 
-    #qmessagedialog for DRY blahvlahblah...
+    # qmessagedialog for DRY blahvlahblah...
     def message_dialog(self, icon, message, title):
         msgBox = QMessageBox()
         msgBox.setIcon(icon)
@@ -228,12 +252,12 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         msgBox.setWindowTitle(title)
         msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
         msgBox.exec()
-    
+
     # function to see changes in the mfing textedits
     def update_input_label(self):
         x = len(self.inputText.toPlainText())
         self.inputLabelChar.setText(f"Characters: {x}")
-    
+
     def update_result_label(self):
         x = len(self.resultText.toPlainText())
         self.resultLabelChar.setText(f"Characters: {x}")
@@ -249,9 +273,11 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.processText.setPlainText(result_str)
 
 
-# parse file to be refactored.... 
+# TODO: parse file to be refactored....
+
     def load_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open File", "", "PDF Files (*.pdf);;Word Files (*.docx)")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Open File", "", "PDF Files (*.pdf);;Word Files (*.docx)")
         if file_path:
             text = self.parse_file(file_path)
             self.inputText.setPlainText(text)
@@ -272,6 +298,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         doc = docx.Document(file_path)
         text = "\n".join([para.text for para in doc.paragraphs])
         return text
+
 
 app = QApplication(sys.argv)
 window = MainMenu()
