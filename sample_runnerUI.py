@@ -24,17 +24,18 @@ class LemmatizeThread(QThread):
     # Signal to send the result back to the main thread
     # update this shit if u want to add the variable to be send to the UI
     finished = pyqtSignal(str, list, list, list, list,
-                          list, list, list, dict, dict)
+                          list, list, list, dict, dict, object)
 
     def __init__(self, text):
         super().__init__()
         self.text = text
+        self.lemma_object = None
 
     def run(self):
         self.t = TagLemma.TagLemma()
         self.t.load_lemma_to_dfame('tagalog_lemmas.txt')
         self.t.load_formal_tagalog('formal_tagalog.txt')
-        result, lemmas = self.t.lemmatize_no_print(self.text)
+        result, lemmas, self.lemma_obj = self.t.lemmatize_no_print(self.text)
         valid_tokens = self.t.valid_tokens
         invalid_tokens = self.t.invalid_tokens
         tokenized = self.t.tokenized
@@ -47,7 +48,7 @@ class LemmatizeThread(QThread):
         # To be send to the main UI sadhkjasdhas
         self.finished.emit(result, valid_tokens, lemmas,
             invalid_tokens, tokenized, morphemes, result_removed_sw, 
-            exclude_invalid, annotation, source_to_target)
+            exclude_invalid, annotation, source_to_target, self.lemma_obj)
 
 
 class MainMenu(QMainWindow, Ui_MainWindow):
@@ -55,6 +56,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
         self.t = TagLemma.TagLemma()
+        self.t_thread = None
+
         self.headerWidget.setMinimumHeight(100)
         # set the size for the btns in landing page
         self.lemmaBtn.setSizePolicy(
@@ -147,10 +150,13 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     def potential_lemma_toggle(self):
         if self.potentialLemmaBtn.isChecked():
+            print(self.source_to_target)
             keys = list(self.source_to_target.keys())
+            
             self.process_dropdown.addItems(keys)
             self.process_dropdown.show()
-            self.potential_lemma(0, keys)
+            #self.potential_lemma(0, keys)
+            print(self.potential_lemma(0, keys))
             self.process_dropdown.currentIndexChanged.connect(
                 lambda: self.potential_lemma(self.process_dropdown.currentIndex(), keys))
         else:
@@ -159,9 +165,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     def potential_lemma(self, index, token):
         print(token[index])
-        
-        self.processText.setPlainText(
-            self.t.show_potential_lemmas(token[index]))
+        text = (", ".join(self.t_thread.lemma_obj.show_potential_lemmas(token[index])))
+        self.processText.setPlainText(text)
         
     # this set the behavior of the results using the combobox
     def combo_box_changed(self, i):
@@ -229,7 +234,9 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.progressDialog.show()
         """
         # Starts the lemmatization sa ibang thread
-        self.thread = LemmatizeThread(text)
+        self.t_thread =  LemmatizeThread(text)
+
+        self.thread = self.t_thread
         # Connects signal to UI update
         self.thread.finished.connect(self.on_lemmatization_complete)
         self.thread.start()
