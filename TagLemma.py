@@ -441,8 +441,12 @@ class TagLemma:
 
     # Display potential lemmas basedon the chosen morpheme
     def show_potential_lemmas(self, lemmatizable_token):
+        
+        print(self.list_of_lemmatizable_tokens)
         morpheme_index = self.list_of_lemmatizable_tokens.index(lemmatizable_token)
+        
         morpheme = self.list_of_morphemes[morpheme_index]
+        print(morpheme)
         return self.potential_lemmas[morpheme]
     
     # Display the process of the algorithm based on the highest lemma only, not the entire lemma output
@@ -667,7 +671,7 @@ class TagLemma:
         self.input = input_text
         self.tokenized = self.tokenize_input_text(input_text.lower())
 
-        # removed_sw = self.remove_stop_words(tokenized)
+        removed_sw = self.remove_stop_words(self.tokenized)
 
         isValidated = self.validate_formal_tagalog(self.tokenized)
         self.valid_tokens = isValidated[2]
@@ -730,7 +734,7 @@ class TagLemma:
         self.result_removed_sw = self.remove_stop_words(self.lemmatized_text)
         # self.lemmatized_text = []
 
-        return (self.result, self.lemma)
+        return (self.result, self.lemma, self)
 
     def exclude_invalid(self):
         result = []
