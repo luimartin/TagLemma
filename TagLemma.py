@@ -78,7 +78,7 @@ class TagLemma:
         self.potential_lemmas = {}
         self.lemma_ranking_list = {}
         self.lemmatized_text = []
-
+        self.source_to_target = {}
         self.valid_tokens = None  # forda UI
         self.invalid_tokens = None  # forda UI
         self.lemma = []  # forda UI
@@ -426,17 +426,23 @@ class TagLemma:
     
     # Creating of morpheme : potential lemmas key value pair
     def create_morpheme_to_potential_lemmas(self, morpheme, potential_lemmas):
-        # Turn Potential Lemmas---which is an DataFrame type---Into an Array 
-        converted_potential_lemmas_to_array = potential_lemmas.squeeze().tolist()
+        # Ensure potential_lemmas is a DataFrame
+        if isinstance(potential_lemmas, pd.DataFrame):
+            # Turn Potential Lemmas---which is a DataFrame type---Into an Array 
+            converted_potential_lemmas_to_array = potential_lemmas['WORDS'].tolist()
+        else:
+            converted_potential_lemmas_to_array = []
 
         # The Key : Value pair of the morpheme and potential lemmas of the input
         self.potential_lemmas[morpheme] = converted_potential_lemmas_to_array
+    
+    def create_source_to_target(self, token, lemma):
+        self.source_to_target[token] = lemma
 
     # Display potential lemmas basedon the chosen morpheme
     def show_potential_lemmas(self, lemmatizable_token):
         morpheme_index = self.list_of_lemmatizable_tokens.index(lemmatizable_token)
         morpheme = self.list_of_morphemes[morpheme_index]
-
         return self.potential_lemmas[morpheme]
     
     # Display the process of the algorithm based on the highest lemma only, not the entire lemma output
@@ -444,86 +450,92 @@ class TagLemma:
     def show_cosine_similarity(self, source, target):
         source_vec = Counter(source)
         target_vec = Counter(target)
-    
-        print("\n==== Cosine Similarity Process ====\n")
-        print(f"Source: {source}")
-        print(f"Target: {target}\n")
+        
+        output = []
+        output.append("\n==== Cosine Similarity Process ====\n")
+        output.append(f"Source: {source}")
+        output.append(f"Target: {target}\n")
         
         unique_chars_source = set(source)
         unique_chars_target = set(target)
-        print("Step 1: Extract Unique Characters")
-        print(f"Unique Characters in Source: {unique_chars_source}")
-        print(f"Unique Characters in Target: {unique_chars_target}\n")
+        output.append("Step 1: Extract Unique Characters")
+        output.append(f"Unique Characters in Source: {unique_chars_source}")
+        output.append(f"Unique Characters in Target: {unique_chars_target}\n")
         
-        print("Step 2: Convert Text to Frequency Vectors")
-        print(f"Source Vector: {dict(source_vec)}")
-        print(f"Target Vector: {dict(target_vec)}\n")
+        output.append("Step 2: Convert Text to Frequency Vectors")
+        output.append(f"Source Vector: {dict(source_vec)}")
+        output.append(f"Target Vector: {dict(target_vec)}\n")
         
-        print("Step 3: Compute Dot Product")
+        output.append("Step 3: Compute Dot Product")
         dot_product = sum(source_vec[key] * target_vec[key] for key in source_vec if key in target_vec)
-        print(f"Dot Product: {dot_product}\n")
-
-        print("Step 4: Compute Magnitude of Vectors")
+        output.append(f"Dot Product: {dot_product}\n")
+        
+        output.append("Step 4: Compute Magnitude of Vectors")
         magnitude1 = math.sqrt(sum([val**2 for val in source_vec.values()]))
         magnitude2 = math.sqrt(sum([val**2 for val in target_vec.values()]))
-        print(f"||Source|| = {magnitude1:.2f}")
-        print(f"||Target|| = {magnitude2:.2f}\n")
-
-        print("Step 5: Compute Cosine Similarity")
+        output.append(f"||Source|| = {magnitude1:.2f}")
+        output.append(f"||Target|| = {magnitude2:.2f}\n")
+        
+        output.append("Step 5: Compute Cosine Similarity")
         if magnitude1 == 0 or magnitude2 == 0:
             similarity = 0.0
         else:
             similarity = dot_product / (magnitude1 * magnitude2)
-        print(f"Cosine Similarity = {dot_product:.2f} / ({magnitude1:.2f} x {magnitude2:.2f})")
-        print(f"                  = {dot_product:.2f} / {magnitude1 * magnitude2:.2f}")
-        print(f"                  = {similarity:.4f}\n")
-    
-        print("===================================\n")
+        output.append(f"Cosine Similarity = {dot_product:.2f} / ({magnitude1:.2f} x {magnitude2:.2f})")
+        output.append(f"                  = {dot_product:.2f} / {magnitude1 * magnitude2:.2f}")
+        output.append(f"                  = {similarity:.4f}\n")
+        
+        output.append("===================================\n")
+  
+        return "\n".join(output)
 
-    def show_lev_distance(self, source, target):
+    def show_lev_distance(self,source, target):
         m, n = len(source), len(target)
         d = np.zeros((m + 1, n + 1), dtype=int)
-
-        print("\n==== Levenshtein Distance Process ====\n")
-        print(f"Source: {source}")
-        print(f"Target: {target}\n")
-
-        print("Step 1: Initialize Distance Matrix")
+        
+        result = []
+        result.append("\n==== Levenshtein Distance Process ====\n")
+        result.append(f"Source: {source}")
+        result.append(f"Target: {target}\n")
+        
+        result.append("Step 1: Initialize Distance Matrix")
         for i in range(m + 1):
             d[i][0] = i
         for j in range(n + 1):
             d[0][j] = j
         
-        print("\nInitial Matrix:")
-        self.print_matrix(d, source, target)
-
-        print("\nStep 2: Compute Distance Matrix")
+        result.append("\nInitial Matrix:")
+        result.append(self.print_matrix(d, source, target))
+        
+        result.append("\nStep 2: Compute Distance Matrix")
         for i in range(1, m + 1):
             for j in range(1, n + 1):
                 cost = 0 if source[i - 1] == target[j - 1] else 1
                 d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
-
-                print(f"\nAfter processing '{source[i-1]}' and '{target[j-1]}':")
-                self.print_matrix(d, source, target)
-
+        
         distance = d[m][n]
         max_len = max(len(source), len(target))
         similarity = 1 - (distance / max_len) if max_len > 0 else 1.0
+        result.append(self.print_matrix(d, source, target))
+        
+        result.append("\nStep 3: Compute Similarity Score")
+        result.append(f"Levenshtein Distance: {distance}")
+        result.append(f"Max Length of Words: {max_len}")
+        result.append(f"Similarity Score = 1 - ({distance} / {max_len}) = {similarity:.4f}\n")
+        result.append("===================================\n")
+        
+        return "\n".join(result)
 
-        print("\nStep 3: Compute Similarity Score")
-        print(f"Levenshtein Distance: {distance}")
-        print(f"Max Length of Words: {max_len}")
-        print(f"Similarity Score = 1 - ({distance} / {max_len}) = {similarity:.4f}\n")
-        print("===================================\n")
-
-    def print_matrix(self, matrix, source, target):
-        # Helper Function Just to Prin the Levenshtein Matrix with the Lables
+    def print_matrix(self,matrix, source, target):
         source = " " + source 
         target = " " + target
-
-        print("   " + "  ".join(target)) 
+        
+        matrix_str = []
+        matrix_str.append("\t" + "\t".join(target))
         for i, row in enumerate(matrix):
-            print(source[i], row)
+            matrix_str.append(source[i] + "\t" + "".join(map(str, row)))
+        
+        return "\n".join(matrix_str)
 
     # Show the Lemma Ranking Based on the Available Lemmatizable Token
     def store_lemma_ranking_in_dict(self, lemmatizable_token, potential_lemmas):
@@ -560,7 +572,6 @@ class TagLemma:
         isValidated = self.validate_formal_tagalog(self.tokenized)
         self.valid_tokens = isValidated[2]
         self.invalid_tokens = isValidated[1]
-        print(type(self.valid_tokens))
         print('')
         print('=========================Validate Token if Formal Tagalog Word=========================')
         print("\nResult for Validating Formal Tagalog: ")
@@ -576,7 +587,6 @@ class TagLemma:
             # print("About to lemmatize: ", self.to_lemmatize_tokens, "\n")
             for token in self.to_lemmatize_tokens:
                 inf_input = token
-                # print("self.to_lemmatize_tokens", self.to_lemmatize_tokens)
                 print("Token to Lem: ", token, "\n")
                 print(self.list_of_lemmatizable_tokens)
                 if self.to_lemmatize_tokens.index(token) not in self.not_to_lemmatize_tokens_index:
@@ -619,10 +629,16 @@ class TagLemma:
                         
                         best_lemma = self.show_best_lemma(
                             fuzzy_potential_lemmas)
+                        
+                        self.create_source_to_target(token, best_lemma)
+        
+                        #self.show_cosine_similarity(token, best_lemma)
+                        #self.show_lev_distance(token, best_lemma)
 
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
                         self.annotate(inf_input, best_lemma)
+                        
 
                     else:
                         self.lemmatized_text.append(token)
@@ -676,16 +692,25 @@ class TagLemma:
                         if potential_lemmas.empty:
                             best_lemma = token
 
+                         # Storing morphem : potential lemmas key value pair
+                        self.create_morpheme_to_potential_lemmas(morpheme, potential_lemmas)
+
                         # Secret Move: If Letter D is Last
+                        temp_token = token
                         if 'd' in token[-1]:
-                            token = self.alternate_morphophonemic_rd(token)
+                            temp_token = self.alternate_morphophonemic_rd(token)
 
                         # Perform Fuzzy Matcing Algorithm to Lemmatize Token
                         fuzzy_potential_lemmas = self.fuzzy_matching(
-                            token, potential_lemmas)
+                            temp_token, potential_lemmas)
+                        
+                        self.store_lemma_ranking_in_dict(token, fuzzy_potential_lemmas)
+                        
                         best_lemma = self.show_best_lemma(
                             fuzzy_potential_lemmas)
-
+                            
+                        self.create_source_to_target(token, best_lemma)
+                        #self.show_cosine_similarity(token, best_lemma)
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
                         self.annotate(inf_input, best_lemma)
@@ -716,22 +741,33 @@ class TagLemma:
 
 if __name__ == "__main__":
     t = TagLemma()
-    str_input = "kumakain kumakain kumakain"
+    str_input = "kumakain tumatakbos"
     t.load_lemma_to_dfame('tagalog_lemmas.txt')
     t.load_formal_tagalog('formal_tagalog_sorted.txt')
-    t.lemmatize(str_input)
+    t.lemmatize_no_print(str_input)
     #print(t.show_annotation())
     #print(t.show_inflection_and_morpheme())
-    """print(t.result_removed_sw)
-    print(t.exclude_invalid())
+    #print(t.result_removed_sw)
+    #print(t.exclude_invalid())
 
-    print("List of lemmatizable tokens: ")
+    """print("List of lemmatizable tokens: ")
     print(t.list_of_lemmatizable_tokens)
     print("List of Morphemes based on Lemmatizable Tokens")
     print(t.list_of_morphemes)
-    print("Potential lemmas of kumakain based on its approximate morpheme pattern")
-    print(t.show_potential_lemmas("kumakain"))"""
+    print("Potential lemmas of kumakain based on its approximate morpheme pattern")"""
+    
+    print(t.source_to_target)
+    keys = list(t.source_to_target.keys())
+    print(t.show_potential_lemmas(keys[0]))
 
-    #t.show_cosine_similarity("kumakain", "kumain")
-    # t.show_lev_distance("kumakain", "kumain");
-    # print(t.show_lemma_ranking(""))
+    # fuzzy matching module
+
+
+    # source is from source_to_target keys
+    # target is from source_to_target values
+    
+    #print(t.show_cosine_similarity("kumakain", "kumain"))
+    #print(t.show_lev_distance("kumakain", "kumain"))
+
+    # lemma
+    print(t.show_lemma_ranking(keys[0]))
