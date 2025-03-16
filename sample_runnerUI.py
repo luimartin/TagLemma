@@ -1,5 +1,5 @@
 from sampleUI import Ui_MainWindow
-from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout
+from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout, QButtonGroup
 from PyQt6.QtCore import QThread, pyqtSignal, Qt
 import sys
 import pdf
@@ -7,6 +7,7 @@ import TagLemma
 import fitz
 import docx
 import json
+from fuzzymodule import Dialog
 """
 page indexing
 0 featurepage
@@ -131,8 +132,13 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.horizontalLayout_7.addWidget(self.process_dropdown)
         self.verticalLayout_7.insertLayout(0, self.horizontalLayout_7)
         self.process_dropdown.hide()
+
         self.potentialLemmaBtn.setCheckable(True)
-        self.potentialLemmaBtn.clicked.connect(self.potential_lemma_toggle)
+        self.lemmaRankingBtn.setCheckable(True)
+        self.potentialLemmaBtn.clicked.connect(self.toggle_buttons)
+        self.lemmaRankingBtn.clicked.connect(self.toggle_buttons)
+        self.fuzzyBtn.clicked.connect(self.fuzzy_dialog)
+
         # annotationPage
         self.horizontalLayout_7 = QHBoxLayout()
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
@@ -148,26 +154,41 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
         self.export_annotation.clicked.connect(self.save_json)
 
-    def potential_lemma_toggle(self):
-        if self.potentialLemmaBtn.isChecked():
-            print(self.source_to_target)
+    def fuzzy_dialog(self):
+        dialog = Dialog(self.t_thread.lemma_obj, self)
+        dialog.show()
+
+    def toggle_buttons(self):
+        sender = self.sender()  # Get the button that was clicked
+        # If the button is being toggled ON, turn the other button OFF
+        self.process_dropdown.clear()
+        if sender.isChecked():
+
             keys = list(self.source_to_target.keys())
-            
             self.process_dropdown.addItems(keys)
             self.process_dropdown.show()
-            #self.potential_lemma(0, keys)
-            print(self.potential_lemma(0, keys))
-            self.process_dropdown.currentIndexChanged.connect(
-                lambda: self.potential_lemma(self.process_dropdown.currentIndex(), keys))
-        else:
-            self.process_dropdown.hide()
-            self.processText.clear()
 
-    def potential_lemma(self, index, token):
-        print(token[index])
+            if sender == self.potentialLemmaBtn:
+                self.lemmaRankingBtn.setChecked(False)
+                self.potential_lemma(self.process_dropdown.currentIndex(), keys)
+                self.process_dropdown.currentIndexChanged.connect(
+                lambda: self.potential_lemma(self.process_dropdown.currentIndex(), keys))
+            else:
+                self.potentialLemmaBtn.setChecked(False)
+                self.lemma_ranking(self.process_dropdown.currentIndex(), keys)
+                self.process_dropdown.currentIndexChanged.connect(
+                lambda: self.lemma_ranking(self.process_dropdown.currentIndex(), keys))
+        else: 
+            self.process_dropdown.hide()
+
+    def potential_lemma(self, index, token, ):
         text = (", ".join(self.t_thread.lemma_obj.show_potential_lemmas(token[index])))
+        print(self.t_thread.lemma_obj.show_lemma_ranking(token[index]))
         self.processText.setPlainText(text)
-        
+    
+    def lemma_ranking(self, index, token, ):
+        data = self.t_thread.lemma_obj.show_lemma_ranking(token[index]).to_string()
+        self.processText.setPlainText(data)
     # this set the behavior of the results using the combobox
     def combo_box_changed(self, i):
         if i == 0:
