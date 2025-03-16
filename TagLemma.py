@@ -65,6 +65,7 @@ class TagLemma:
             'yung', 'pwede', 'pwede', 'uli', 'makita', 'noong', 'nasa'
         ]
 
+        self.dframe = None
         self.raw_lemmas = None
         self.lemma_size = None
         self.formal_words = None
@@ -74,8 +75,10 @@ class TagLemma:
         self.morpheme = None
         self.list_of_morphemes = []
         self.list_of_lemmatizable_tokens = []
-        self.potential_lemmas = None
+        self.potential_lemmas = {}
+        self.lemma_ranking_list = {}
         self.lemmatized_text = []
+        self.source_to_target = {}
         self.valid_tokens = None  # forda UI
         self.invalid_tokens = None  # forda UI
         self.lemma = []  # forda UI
@@ -88,10 +91,10 @@ class TagLemma:
         with open(file_path, 'r') as file:
             lines = [line.strip() for line in file]
 
-        df = pd.DataFrame(lines, columns=['WORDS'])
+        self.dframe = pd.DataFrame(lines, columns=['WORDS'])
 
-        self.raw_lemmas = df
-        self.lemma_size = df.shape[0]
+        self.raw_lemmas = self.dframe 
+        self.lemma_size = self.dframe.shape[0]
 
     def load_formal_tagalog(self, file_path):
         with open(file_path, 'r') as file:
@@ -206,6 +209,7 @@ class TagLemma:
 
         self.morpheme = morpheme_word
 
+        # Save the morpheme in the list 
         self.list_of_morphemes.append(morpheme_word)
 
         return morpheme_word
@@ -241,7 +245,7 @@ class TagLemma:
             token)]
         potential_lemmas = filtered_lemmas[filtered_lemmas['WORDS'].apply(
             lambda x: self.reduce_search_space(x, morpheme))]
-
+        
         return potential_lemmas
 
     # This Part if for Interchanging the Letters
@@ -396,6 +400,7 @@ class TagLemma:
 
         return threshold_potential_lemmas
 
+# =======================CODE FOR DISPLAY RELEVANT INFO IN LEMMATIZATION SYSTEM=======================
     def show_best_lemma(self, potential_lemmas):
         if not potential_lemmas.empty:
             sorted_lemmas = potential_lemmas.sort_values(
@@ -418,13 +423,145 @@ class TagLemma:
 
     def show_inflection_and_morpheme(self):
         return [f"{self.list_of_lemmatizable_tokens[i]} -> {self.list_of_morphemes[i]}" for i in range(len(self.list_of_lemmatizable_tokens))]
+    
+    # Creating of morpheme : potential lemmas key value pair
+    def create_morpheme_to_potential_lemmas(self, morpheme, potential_lemmas):
+        # Ensure potential_lemmas is a DataFrame
+        if isinstance(potential_lemmas, pd.DataFrame):
+            # Turn Potential Lemmas---which is a DataFrame type---Into an Array 
+            converted_potential_lemmas_to_array = potential_lemmas['WORDS'].tolist()
+        else:
+            converted_potential_lemmas_to_array = []
 
+        # The Key : Value pair of the morpheme and potential lemmas of the input
+        self.potential_lemmas[morpheme] = converted_potential_lemmas_to_array
+    
+    def create_source_to_target(self, token, lemma):
+        self.source_to_target[token] = lemma
+
+    # Display potential lemmas basedon the chosen morpheme
+    def show_potential_lemmas(self, lemmatizable_token):
+        
+        print(self.list_of_lemmatizable_tokens)
+        morpheme_index = self.list_of_lemmatizable_tokens.index(lemmatizable_token)
+        
+        morpheme = self.list_of_morphemes[morpheme_index]
+        print(morpheme)
+        return self.potential_lemmas[morpheme]
+    
+    # Display the process of the algorithm based on the highest lemma only, not the entire lemma output
+    # Applied to all fuzzy algorithms below
+    def show_cosine_similarity(self, source, target):
+        source_vec = Counter(source)
+        target_vec = Counter(target)
+        
+        output = []
+        output.append("\n==== Cosine Similarity Process ====\n")
+        output.append(f"Source: {source}")
+        output.append(f"Target: {target}\n")
+        
+        unique_chars_source = set(source)
+        unique_chars_target = set(target)
+        output.append("Step 1: Extract Unique Characters")
+        output.append(f"Unique Characters in Source: {unique_chars_source}")
+        output.append(f"Unique Characters in Target: {unique_chars_target}\n")
+        
+        output.append("Step 2: Convert Text to Frequency Vectors")
+        output.append(f"Source Vector: {dict(source_vec)}")
+        output.append(f"Target Vector: {dict(target_vec)}\n")
+        
+        output.append("Step 3: Compute Dot Product")
+        dot_product = sum(source_vec[key] * target_vec[key] for key in source_vec if key in target_vec)
+        output.append(f"Dot Product: {dot_product}\n")
+        
+        output.append("Step 4: Compute Magnitude of Vectors")
+        magnitude1 = math.sqrt(sum([val**2 for val in source_vec.values()]))
+        magnitude2 = math.sqrt(sum([val**2 for val in target_vec.values()]))
+        output.append(f"||Source|| = {magnitude1:.2f}")
+        output.append(f"||Target|| = {magnitude2:.2f}\n")
+        
+        output.append("Step 5: Compute Cosine Similarity")
+        if magnitude1 == 0 or magnitude2 == 0:
+            similarity = 0.0
+        else:
+            similarity = dot_product / (magnitude1 * magnitude2)
+        output.append(f"Cosine Similarity = {dot_product:.2f} / ({magnitude1:.2f} x {magnitude2:.2f})")
+        output.append(f"                  = {dot_product:.2f} / {magnitude1 * magnitude2:.2f}")
+        output.append(f"                  = {similarity:.4f}\n")
+        
+        output.append("===================================\n")
+  
+        return "\n".join(output)
+
+    def show_lev_distance(self,source, target):
+        m, n = len(source), len(target)
+        d = np.zeros((m + 1, n + 1), dtype=int)
+        
+        result = []
+        result.append("\n==== Levenshtein Distance Process ====\n")
+        result.append(f"Source: {source}")
+        result.append(f"Target: {target}\n")
+        
+        result.append("Step 1: Initialize Distance Matrix")
+        for i in range(m + 1):
+            d[i][0] = i
+        for j in range(n + 1):
+            d[0][j] = j
+        
+        result.append("\nInitial Matrix:")
+        result.append(self.print_matrix(d, source, target))
+        
+        result.append("\nStep 2: Compute Distance Matrix")
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                cost = 0 if source[i - 1] == target[j - 1] else 1
+                d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+        
+        distance = d[m][n]
+        max_len = max(len(source), len(target))
+        similarity = 1 - (distance / max_len) if max_len > 0 else 1.0
+        result.append(self.print_matrix(d, source, target))
+        
+        result.append("\nStep 3: Compute Similarity Score")
+        result.append(f"Levenshtein Distance: {distance}")
+        result.append(f"Max Length of Words: {max_len}")
+        result.append(f"Similarity Score = 1 - ({distance} / {max_len}) = {similarity:.4f}\n")
+        result.append("===================================\n")
+        
+        return "\n".join(result)
+
+    def print_matrix(self,matrix, source, target):
+        source = " " + source 
+        target = " " + target
+        
+        matrix_str = []
+        matrix_str.append("\t" + "\t".join(target))
+        for i, row in enumerate(matrix):
+            matrix_str.append(source[i] + "\t" + "".join(map(str, row)))
+        
+        return "\n".join(matrix_str)
+
+    # Show the Lemma Ranking Based on the Available Lemmatizable Token
+    def store_lemma_ranking_in_dict(self, lemmatizable_token, potential_lemmas):
+        if not hasattr(self, "lemma_ranking_list"):
+            self.lemma_ranking_list = {}  # Initialize if not exists
+
+        # Store a copy of the DataFrame to prevent accidental modification
+        sorted_lemmas = potential_lemmas.sort_values(by='Rank Scores', ascending=False)
+        sorted_lemmas = sorted_lemmas.head(10)
+
+        self.lemma_ranking_list[lemmatizable_token] = sorted_lemmas.copy()
+
+    def show_lemma_ranking(self, lemmatizable_token):
+        return self.lemma_ranking_list.get(lemmatizable_token, "Lemma not found")
+            
    # =======================MAIN PROCESS OF LEMMATIZATION=======================
 
     def lemmatize(self, input_text):
         # Tokenized, Removed Stop Words and Validate the Input Text
         self.input = input_text
         self.tokenized = self.tokenize_input_text(input_text.lower())
+        
         print('')
         print('=========================Tokenized Tagalog Text=========================')
         print("\nTokenized Input Text:")
@@ -439,7 +576,6 @@ class TagLemma:
         isValidated = self.validate_formal_tagalog(self.tokenized)
         self.valid_tokens = isValidated[2]
         self.invalid_tokens = isValidated[1]
-        print(type(self.valid_tokens))
         print('')
         print('=========================Validate Token if Formal Tagalog Word=========================')
         print("\nResult for Validating Formal Tagalog: ")
@@ -455,7 +591,6 @@ class TagLemma:
             # print("About to lemmatize: ", self.to_lemmatize_tokens, "\n")
             for token in self.to_lemmatize_tokens:
                 inf_input = token
-                # print("self.to_lemmatize_tokens", self.to_lemmatize_tokens)
                 print("Token to Lem: ", token, "\n")
                 print(self.list_of_lemmatizable_tokens)
                 if self.to_lemmatize_tokens.index(token) not in self.not_to_lemmatize_tokens_index:
@@ -471,6 +606,7 @@ class TagLemma:
 
                         potential_lemmas = self.get_potential_lemmas(
                             token, morpheme)
+
                         print("Total Words in Dict: ", self.lemma_size)
                         print("Total Number of Potential Lemmas: ",
                               potential_lemmas.shape[0])
@@ -480,19 +616,33 @@ class TagLemma:
                         if potential_lemmas.empty:
                             best_lemma = token
 
+                        # Storing morphem : potential lemmas key value pair
+                        self.create_morpheme_to_potential_lemmas(morpheme, potential_lemmas)
+
+                        
                         # Secret Move: If Letter D is Last
+                        temp_token = token
                         if 'd' in token[-1]:
-                            token = self.alternate_morphophonemic_rd(token)
+                            temp_token = self.alternate_morphophonemic_rd(token)
 
                         # Perform Fuzzy Matcing Algorithm to Lemmatize Token
                         fuzzy_potential_lemmas = self.fuzzy_matching(
-                            token, potential_lemmas)
+                            temp_token, potential_lemmas)
+                        
+                        self.store_lemma_ranking_in_dict(token, fuzzy_potential_lemmas)
+                        
                         best_lemma = self.show_best_lemma(
                             fuzzy_potential_lemmas)
+                        
+                        self.create_source_to_target(token, best_lemma)
+        
+                        #self.show_cosine_similarity(token, best_lemma)
+                        #self.show_lev_distance(token, best_lemma)
 
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
                         self.annotate(inf_input, best_lemma)
+                        
 
                     else:
                         self.lemmatized_text.append(token)
@@ -521,7 +671,7 @@ class TagLemma:
         self.input = input_text
         self.tokenized = self.tokenize_input_text(input_text.lower())
 
-        # removed_sw = self.remove_stop_words(tokenized)
+        removed_sw = self.remove_stop_words(self.tokenized)
 
         isValidated = self.validate_formal_tagalog(self.tokenized)
         self.valid_tokens = isValidated[2]
@@ -546,16 +696,25 @@ class TagLemma:
                         if potential_lemmas.empty:
                             best_lemma = token
 
+                         # Storing morphem : potential lemmas key value pair
+                        self.create_morpheme_to_potential_lemmas(morpheme, potential_lemmas)
+
                         # Secret Move: If Letter D is Last
+                        temp_token = token
                         if 'd' in token[-1]:
-                            token = self.alternate_morphophonemic_rd(token)
+                            temp_token = self.alternate_morphophonemic_rd(token)
 
                         # Perform Fuzzy Matcing Algorithm to Lemmatize Token
                         fuzzy_potential_lemmas = self.fuzzy_matching(
-                            token, potential_lemmas)
+                            temp_token, potential_lemmas)
+                        
+                        self.store_lemma_ranking_in_dict(token, fuzzy_potential_lemmas)
+                        
                         best_lemma = self.show_best_lemma(
                             fuzzy_potential_lemmas)
-
+                            
+                        self.create_source_to_target(token, best_lemma)
+                        #self.show_cosine_similarity(token, best_lemma)
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
                         self.annotate(inf_input, best_lemma)
@@ -575,7 +734,7 @@ class TagLemma:
         self.result_removed_sw = self.remove_stop_words(self.lemmatized_text)
         # self.lemmatized_text = []
 
-        return (self.result, self.lemma)
+        return (self.result, self.lemma, self)
 
     def exclude_invalid(self):
         result = []
@@ -586,11 +745,33 @@ class TagLemma:
 
 if __name__ == "__main__":
     t = TagLemma()
-    str_input = "Ako ay kumakain ng pagkain habang pinanonood ang palabas sa telebisyon"
+    str_input = "kumakain tumatakbos"
     t.load_lemma_to_dfame('tagalog_lemmas.txt')
     t.load_formal_tagalog('formal_tagalog_sorted.txt')
-    t.lemmatize(str_input)
+    t.lemmatize_no_print(str_input)
     #print(t.show_annotation())
     #print(t.show_inflection_and_morpheme())
-    print(t.result_removed_sw)
-    print(t.exclude_invalid())
+    #print(t.result_removed_sw)
+    #print(t.exclude_invalid())
+
+    """print("List of lemmatizable tokens: ")
+    print(t.list_of_lemmatizable_tokens)
+    print("List of Morphemes based on Lemmatizable Tokens")
+    print(t.list_of_morphemes)
+    print("Potential lemmas of kumakain based on its approximate morpheme pattern")"""
+    
+    print(t.source_to_target)
+    keys = list(t.source_to_target.keys())
+    print(t.show_potential_lemmas(keys[0]))
+
+    # fuzzy matching module
+
+
+    # source is from source_to_target keys
+    # target is from source_to_target values
+    
+    #print(t.show_cosine_similarity("kumakain", "kumain"))
+    #print(t.show_lev_distance("kumakain", "kumain"))
+
+    # lemma
+    print(t.show_lemma_ranking(keys[0]))
