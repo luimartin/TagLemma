@@ -1,6 +1,8 @@
 from sampleUI import Ui_MainWindow
-from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox
-from PyQt6.QtCore import QThread, pyqtSignal, Qt
+from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout
+from PyQt6.QtCore import QThread, pyqtSignal, Qt, QCoreApplication, QSize
+from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6 import QtGui, QtCore 
 import sys
 import pdf
 import TagLemma
@@ -47,7 +49,197 @@ class LemmatizeThread(QThread):
 class MainMenu(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
+        self.setupUi(self)  
+        #======================================================================
+
+        self.setWindowTitle("TagLemma")
+        self.setWindowIcon(QIcon("assets/logo.png"))
+        
+        self.centralwidget.setStyleSheet("""
+            background: #ecf6f9;
+                    
+        """)
+        self.headerWidget.setStyleSheet("""
+            background: #1f6663;
+            border-right: 1px ridge white;
+            border-bottom: 1px ridge white;
+            border-top: none;
+            border-left: none;
+            border-radius: 5px;
+        """)
+        self.titleLabel.setStyleSheet("""
+            color: #ffffff;  
+            padding: 0px 5px;
+            font-size: 20px;
+            font-family: "Georgia";
+            font-weight: bold;
+            border-left: none;
+            border-right: none;  
+            border-radius: 1px;                                             
+        """)
+        
+        self.featureBtn.setStyleSheet("""
+            QPushButton {
+                color: white;
+                font-family: "Poppins"; 
+                border-radius: 2px;
+                border: 2px solid rgba(0, 0, 0, 0);
+            } 
+            QPushButton:pressed {
+                background-color: black;  
+            }                      
+        """) 
+        self.stackedWidget.setStyleSheet("""  
+            QLabel{
+                background: rgb(0,0,0,0);
+                font-family: "Georgia"; 
+                font-size: 16px;
+                font-weight: bold;
+                color: black; 
+            }       
+            QPushButton {
+                background: #FAF9F6;
+                font-weight: bold;
+                font-family: "Segoe UI";
+                border-top: none;
+                border-bottom: 2px solid black; 
+                border-left: none;
+                border-right: 2px solid black;
+                border-radius: 5px;
+                padding: 10px 20px;
+            }
+            QPushButton:pressed {
+                background-color: #1f6663;
+                color: white;  
+            }
+            QPlainTextEdit{
+                background: #ffffff;
+                border: 1px solid black;
+            }
+            QComboBox {
+                background: white;
+                color: black;
+                border: 2px solid black;
+                padding: 5px;
+                font-family: "Segoe UI";
+                font-size: 14px;
+            }
+            
+            QComboBox QAbstractItemView {
+                border: 2px solid black;
+                selection-background-color: white; 
+                selection-color: black; 
+                outline: none;
+            }
+            
+            QComboBox QAbstractItemView::item:selected {
+                background: #1f6663;  
+                color: white;
+            }         
+        """)
+        
+        self.featurePage.setStyleSheet(("""
+            QPushButton {
+                background: #ffffff;
+                border: 1px solid #1f6663;
+                border-radius: 4px;
+            }
+            QPushButton:Hover{
+                background: #FAF9F6;
+            }
+            QPushButton:pressed {
+                background: #1f6663;
+            }
+            
+            QPushButton:disabled {
+                background: #ececec;
+            }  
+        """))
+        
+        self.annotationPage.setStyleSheet(("""
+            QTableWidget {
+                background: #ffffff;
+                border: 2px solid black;
+            }
+
+            QTableWidget::item {
+                background: #ffffff;
+                border: 1px solid #dcdcdc;
+            }
+
+            QHeaderView::section {
+                background: #f0f0f0;
+                border: 1px solid black;
+                padding: 4px;
+            }
+
+            QTableWidget {
+                gridline-color: black;
+            }
+        """))
+        
+        self.featureBtn.setIcon(QIcon("assets/feature-icon.png"))
+        self.featureBtn.setIconSize(self.featureBtn.size()) 
+        self.featureBtn.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
+        self.featureBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.importBtn.setIcon(QIcon("assets/import.png"))
+        self.importBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.importBtn.setIconSize(QSize(20, 18)) 
+        
+        self.exportBtn.setIcon(QIcon("assets/export.png"))
+        self.exportBtn.setIconSize(QSize(20, 18)) 
+        self.exportBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.lemmatizeBtn.setIcon(QIcon("assets/lemmatize.png"))
+        self.lemmatizeBtn.setIconSize(QSize(20, 18)) 
+        self.lemmatizeBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.clearBtn.setIcon(QIcon("assets/trash.png"))
+        self.clearBtn.setIconSize(QSize(20, 18)) 
+        self.clearBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.validTokenBtn.setIcon(QIcon("assets/checked.png"))
+        self.validTokenBtn.setIconSize(QSize(20, 18))
+        self.validTokenBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.invalidTokenBtn.setIcon(QIcon("assets/cancel.png"))
+        self.invalidTokenBtn.setIconSize(QSize(20, 18))
+        self.invalidTokenBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.comboBox.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        _translate = QCoreApplication.translate
+        inputIcon = f'<img src="assets/text.png" width="20" height="20">'
+        self.inputLabel.setText(_translate("MainWindow", f'{inputIcon} Input Tagalog Text'))
+        
+        resultIcon = f'<img src="assets/results.png" width="20" height="20">'
+        self.resulLabel.setText(_translate("MainWindow", f'{resultIcon} Result'))
+        
+        validationIcon = f'<img src="assets/shield.png" width="20" height="20">'
+        self.label.setText(_translate("MainWindow", f'{validationIcon} Validation'))
+        
+        processIcon = f'<img src="assets/process.png" width="20" height="20">'
+        self.label_2.setText(_translate("MainWindow", f'{processIcon} Process'))
+        
+        displayIcon = f'<img src="assets/display.png" width="15" height="15">'
+        self.label_5.setText(_translate("MainWindow", f'{displayIcon} Display'))
+        
+        anonotationIcon = f'<img src="assets/writing.png" width="20" height="20">'
+        self.label_3.setText(_translate("MainWindow", f'{anonotationIcon} Annotation'))
+        
+        self.lemmaBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.validationBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.processBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.annotationBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.tokenizationBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.morphemeBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.potentialLemmaBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.fuzzyBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.lemmaRankingBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+
+        #======================================================================0
 
         self.headerWidget.setMinimumHeight(100)
         # set the size for the btns in landing page
