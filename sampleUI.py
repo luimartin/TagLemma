@@ -1,4 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from custombutton import CustomButton
 
 
 class Ui_MainWindow(object):
@@ -36,16 +37,16 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout(self.featurePage)
         self.horizontalLayout_4.setContentsMargins(30, 30, 30, 30)
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
-        self.lemmaBtn = QtWidgets.QPushButton(parent=self.featurePage)
+        self.lemmaBtn = CustomButton("assets/open-book.png", "Lemmatization", "description...", self.featurePage)
         self.lemmaBtn.setObjectName("lemmaBtn")
         self.horizontalLayout_4.addWidget(self.lemmaBtn)
-        self.validationBtn = QtWidgets.QPushButton(parent=self.featurePage)
+        self.validationBtn = CustomButton("assets/stamp.png", "Validation", "description...", self.featurePage)
         self.validationBtn.setObjectName("validationBtn")
         self.horizontalLayout_4.addWidget(self.validationBtn)
-        self.processBtn = QtWidgets.QPushButton(parent=self.featurePage)
+        self.processBtn = CustomButton("assets/engineering.png", "Process", "description...", self.featurePage)
         self.processBtn.setObjectName("processBtn")
         self.horizontalLayout_4.addWidget(self.processBtn)
-        self.annotationBtn = QtWidgets.QPushButton(parent=self.featurePage)
+        self.annotationBtn = CustomButton("assets/note.png", "Annotation", "description...", self.featurePage)
         self.annotationBtn.setObjectName("annotationBtn")
         self.horizontalLayout_4.addWidget(self.annotationBtn)
         self.stackedWidget.addWidget(self.featurePage)
@@ -195,10 +196,6 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.lemmaBtn.setText(_translate("MainWindow", "Lemmatization"))
-        self.validationBtn.setText(_translate("MainWindow", "Validation"))
-        self.processBtn.setText(_translate("MainWindow", "Process"))
-        self.annotationBtn.setText(_translate("MainWindow", "Annotation"))
         self.inputLabel.setText(_translate("MainWindow", "Input Tagalog Text"))
         self.resulLabel.setText(_translate("MainWindow", "Result"))
         self.importBtn.setText(_translate("MainWindow", "Import"))
@@ -209,8 +206,8 @@ class Ui_MainWindow(object):
         self.lemmatizeBtn.setText(_translate("MainWindow", "Lemmatize"))
         self.clearBtn.setText(_translate("MainWindow", "Clear"))
         self.label.setText(_translate("MainWindow", "Validation"))
-        self.validTokenBtn.setText(_translate("MainWindow", "Valid Tokens"))
-        self.invalidTokenBtn.setText(_translate("MainWindow", "Invalid Tokens"))
+        self.validTokenBtn.setText(_translate("MainWindow", " Valid Tokens"))
+        self.invalidTokenBtn.setText(_translate("MainWindow", " Invalid Tokens"))
         self.label_5.setText(_translate("MainWindow", "Display"))
         self.tokenizationBtn.setText(_translate("MainWindow", "Tokenization"))
         self.morphemeBtn.setText(_translate("MainWindow", "Morphemes"))
@@ -219,5 +216,5 @@ class Ui_MainWindow(object):
         self.lemmaRankingBtn.setText(_translate("MainWindow", "Lemma Ranking"))
         self.label_3.setText(_translate("MainWindow", "Annotation"))
         self.label_4.setText(_translate("MainWindow", "Tagalog Input and Lemma Output will be annotated here       "))
-        self.titleLabel.setText(_translate("MainWindow", "Lemmatization of Formal Tagalog Words"))
+        self.titleLabel.setText(_translate("MainWindow", "NoProbLemma"))
         self.featureBtn.setText(_translate("MainWindow", "Features"))
