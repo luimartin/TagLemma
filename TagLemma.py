@@ -51,13 +51,13 @@ class TagLemma:
             'akin', 'aking', 'ako', 'alin', 'am', 'amin', 'aming', 'ang', 'ano', 'anumang',
             'apat', 'at', 'atin', 'ating', 'ay', 'bababa', 'bago', 'bakit', 'bawat', 'bilang',
             'dahil', 'dapat', 'din', 'dito', 'doon', 'gagawin', 'gayunman',
-            'gusto', 'habang', 'hanggang', 'hindi', 'huwag', 'iba',
-            'ibaba', 'ibabaw', 'ibig', 'ikaw', 'ilan', 'inyong', 'isa',
+             'habang', 'hanggang', 'hindi', 'huwag', 'iba',
+             'ibig', 'ikaw', 'ilan', 'inyong', 'isa',
             'ito', 'iyo', 'iyon', 'iyong', 'ka', 'kahit', 'kailanman', 'kami',
             'kanino', 'kanya', 'kanyang', 'kapag', 'katulad', 'kaya', 'kaysa', 'ko', 'kong', 'kulang', 'kung', 'lahat',
             'lamang', 'likod', 'lima', 'maging',
             'masyado', 'may', 'mayroon', 'mga', 'minsan', 'mismo', 'mula', 'muli', 'na',
-            'naging', 'nais', 'nakita', 'namin', 'napaka', 'narito', 'nasaan',
+            'naging', 'nakita', 'namin', 'napaka', 'narito', 'nasaan',
             'ng', 'ngayon', 'ni', 'nila', 'nilang', 'nito', 'niya', 'niyang', 'noon', 'o', 'pa', 'pang'
             'panahon', 'pangalawa', 'para', 'paraan', 'pareho', 'pero',
             'sa', 'saan', 'sarili', 'sila', 'sino', 'siya', 'tatlo', 'tayo',
@@ -508,10 +508,10 @@ class TagLemma:
         for j in range(n + 1):
             d[0][j] = j
         
-        result.append("\nInitial Matrix:")
+        result.append("\nInitial Matrix:\n")
         result.append(self.print_matrix(d, source, target))
         
-        result.append("\nStep 2: Compute Distance Matrix")
+        result.append("\nStep 2: Compute Distance Matrix\n")
         for i in range(1, m + 1):
             for j in range(1, n + 1):
                 cost = 0 if source[i - 1] == target[j - 1] else 1
@@ -522,7 +522,7 @@ class TagLemma:
         similarity = 1 - (distance / max_len) if max_len > 0 else 1.0
         result.append(self.print_matrix(d, source, target))
         
-        result.append("\nStep 3: Compute Similarity Score")
+        result.append("\nStep 3: Compute Similarity Score\n")
         result.append(f"Levenshtein Distance: {distance}")
         result.append(f"Max Length of Words: {max_len}")
         result.append(f"Similarity Score = 1 - ({distance} / {max_len}) = {similarity:.4f}\n")
@@ -530,15 +530,26 @@ class TagLemma:
         
         return "\n".join(result)
 
-    def print_matrix(self,matrix, source, target):
-        source = " " + source 
+    def print_matrix(self, matrix, source, target):
+        source = " " + source
         target = " " + target
-        
+
+        # Create the top border of the grid
         matrix_str = []
-        matrix_str.append("\t" + "\t".join(target))
+        top_border = "\t\t+" + ("\t-------" * len(target)) + "\t+"
+
+
+        # Add the header row (target characters)
+        header_row = "\t\t" + "\t".join(f"\t  {char}\t" for char in target) + "\t"
+        matrix_str.append(header_row)
+        matrix_str.append(top_border)
+
+        # Add each row of the matrix with source characters
         for i, row in enumerate(matrix):
-            matrix_str.append(source[i] + "\t" + "\t".join(map(str, row)))
-        
+            row_str = f" {source[i]}\t\t" + "\t".join(f"\t{val:3}\t" for val in row) + "\t"
+            matrix_str.append(row_str)
+            matrix_str.append(top_border)
+
         return "\n".join(matrix_str)
 
     # Show the Lemma Ranking Based on the Available Lemmatizable Token
