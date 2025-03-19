@@ -1,5 +1,5 @@
 from sampleUI import Ui_MainWindow
-from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout, QSpacerItem, QPushButton, QHBoxLayout, QButtonGroup
+from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout, QButtonGroup
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QCoreApplication, QSize
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6 import QtGui, QtCore
@@ -422,8 +422,11 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     def display_morphemes(self):
         self.process_dropdown.hide()
-        result_str = "\n".join(self.morphemes)
-        self.processText.setPlainText(result_str)
+        if self.morphemes:
+            result_str = "\n".join(self.morphemes)
+            self.processText.setPlainText(result_str)
+        else:
+            self.processText.setPlainText("No morphemes to display.")
 
 
 # TODO: parse file to be refactored....
@@ -690,6 +693,26 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.invalidTokenBtn.setIconSize(QSize(20, 18))
         self.invalidTokenBtn.setCursor(QtGui.QCursor(
             QtCore.Qt.CursorShape.PointingHandCursor))
+
+        self.tokenizationBtn.setIcon(QIcon("assets/box.png"))
+        self.tokenizationBtn.setIconSize(QSize(20, 18))
+        self.tokenizationBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.morphemeBtn.setIcon(QIcon("assets/jigsaw.png"))
+        self.morphemeBtn.setIconSize(QSize(20, 18))
+        self.morphemeBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.potentialLemmaBtn.setIcon(QIcon("assets/search.png"))
+        self.potentialLemmaBtn.setIconSize(QSize(20, 18))
+        self.potentialLemmaBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.fuzzyBtn.setIcon(QIcon("assets/fog.png"))
+        self.fuzzyBtn.setIconSize(QSize(20, 18))
+        self.fuzzyBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.lemmaRankingBtn.setIcon(QIcon("assets/ranking.png"))
+        self.lemmaRankingBtn.setIconSize(QSize(20, 18))
+        self.lemmaRankingBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
 
         self.comboBox.setCursor(QtGui.QCursor(
             QtCore.Qt.CursorShape.PointingHandCursor))
