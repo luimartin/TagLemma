@@ -62,7 +62,7 @@ class TagLemma:
             'panahon', 'pangalawa', 'para', 'paraan', 'pareho', 'pero',
             'sa', 'saan', 'sarili', 'sila', 'sino', 'siya', 'tatlo', 'tayo',
             'tulad', 'tungkol', 'una', 'walang', 'ba', 'eh', 'kasi', 'lang', 'mo', 'naman', 'opo', 'po', 'si', 'talaga',
-            'yung', 'pwede', 'pwede', 'uli', 'makita', 'noong', 'nasa'
+            'yung', 'pwede', 'pwede', 'uli', 'makita', 'noong', 'nasa', 'nang', 'mong'
         ]
 
         self.dframe = None
@@ -537,7 +537,7 @@ class TagLemma:
         matrix_str = []
         matrix_str.append("\t" + "\t".join(target))
         for i, row in enumerate(matrix):
-            matrix_str.append(source[i] + "\t" + "".join(map(str, row)))
+            matrix_str.append(source[i] + "\t" + "\t".join(map(str, row)))
         
         return "\n".join(matrix_str)
 

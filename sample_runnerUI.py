@@ -1,5 +1,5 @@
 from sampleUI import Ui_MainWindow
-from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout
+from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout, QButtonGroup
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QCoreApplication, QSize
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6 import QtGui, QtCore 
@@ -9,6 +9,7 @@ import TagLemma
 import fitz
 import docx
 import json
+from fuzzymodule import Dialog
 """
 page indexing
 0 featurepage
@@ -124,6 +125,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             QPlainTextEdit{
                 background: #ffffff;
                 border: 1px solid black;
+                font-size: 14px;
             }
             QComboBox {
                 background: white;
@@ -144,7 +146,21 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             QComboBox QAbstractItemView::item:selected {
                 background: #1f6663;  
                 color: white;
-            }         
+            }
+            
+            QScrollBar:vertical {
+                border: none;
+                background: #ecf6f9;
+                width: 6px;  /* Makes the vertical scrollbar slimmer */
+                margin: 0px;
+            }
+
+            QScrollBar::handle:vertical {
+                background: #1f6663;
+                min-height: 20px;
+                border-radius: 3px;  /* Keeps it rounded for a modern look */
+            }
+                     
         """)
         
         self.featurePage.setStyleSheet(("""
@@ -216,6 +232,26 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.invalidTokenBtn.setIconSize(QSize(20, 18))
         self.invalidTokenBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         
+        self.tokenizationBtn.setIcon(QIcon("assets/box.png"))
+        self.tokenizationBtn.setIconSize(QSize(20, 18))
+        self.tokenizationBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.morphemeBtn.setIcon(QIcon("assets/jigsaw.png"))
+        self.morphemeBtn.setIconSize(QSize(20, 18))
+        self.morphemeBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.potentialLemmaBtn.setIcon(QIcon("assets/search.png"))
+        self.potentialLemmaBtn.setIconSize(QSize(20, 18))
+        self.potentialLemmaBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.fuzzyBtn.setIcon(QIcon("assets/fog.png"))
+        self.fuzzyBtn.setIconSize(QSize(20, 18))
+        self.fuzzyBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        self.lemmaRankingBtn.setIcon(QIcon("assets/ranking.png"))
+        self.lemmaRankingBtn.setIconSize(QSize(20, 18))
+        self.lemmaRankingBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
         self.comboBox.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         
         _translate = QCoreApplication.translate
@@ -229,8 +265,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.label.setText(_translate("MainWindow", f'{validationIcon} Validation'))
         
         processIcon = f'<img src="assets/process.png" width="20" height="20">'
-        self.label_2.setText(_translate("MainWindow", f'{processIcon} Process'))
-        
+    
         displayIcon = f'<img src="assets/display.png" width="15" height="15">'
         self.label_5.setText(_translate("MainWindow", f'{displayIcon} Display'))
         
@@ -241,12 +276,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.validationBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         self.processBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         self.annotationBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        
-        self.tokenizationBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        self.morphemeBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        self.potentialLemmaBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        self.fuzzyBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        self.lemmaRankingBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
 
         #======================================================================0
 
@@ -323,8 +352,13 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.horizontalLayout_7.addWidget(self.process_dropdown)
         self.verticalLayout_7.insertLayout(0, self.horizontalLayout_7)
         self.process_dropdown.hide()
+
         self.potentialLemmaBtn.setCheckable(True)
-        self.potentialLemmaBtn.clicked.connect(self.potential_lemma_toggle)
+        self.lemmaRankingBtn.setCheckable(True)
+        self.potentialLemmaBtn.clicked.connect(self.toggle_buttons)
+        self.lemmaRankingBtn.clicked.connect(self.toggle_buttons)
+        self.fuzzyBtn.clicked.connect(self.fuzzy_dialog)
+
         # annotationPage
         self.horizontalLayout_7 = QHBoxLayout()
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
@@ -340,26 +374,41 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
         self.export_annotation.clicked.connect(self.save_json)
 
-    def potential_lemma_toggle(self):
-        if self.potentialLemmaBtn.isChecked():
-            print(self.source_to_target)
+    def fuzzy_dialog(self):
+        dialog = Dialog(self.t_thread.lemma_obj, self)
+        dialog.show()
+
+    def toggle_buttons(self):
+        sender = self.sender()  # Get the button that was clicked
+        # If the button is being toggled ON, turn the other button OFF
+        self.process_dropdown.clear()
+        if sender.isChecked():
+
             keys = list(self.source_to_target.keys())
-            
             self.process_dropdown.addItems(keys)
             self.process_dropdown.show()
-            #self.potential_lemma(0, keys)
-            print(self.potential_lemma(0, keys))
-            self.process_dropdown.currentIndexChanged.connect(
-                lambda: self.potential_lemma(self.process_dropdown.currentIndex(), keys))
-        else:
-            self.process_dropdown.hide()
-            self.processText.clear()
 
-    def potential_lemma(self, index, token):
-        print(token[index])
+            if sender == self.potentialLemmaBtn:
+                self.lemmaRankingBtn.setChecked(False)
+                self.potential_lemma(self.process_dropdown.currentIndex(), keys)
+                self.process_dropdown.currentIndexChanged.connect(
+                lambda: self.potential_lemma(self.process_dropdown.currentIndex(), keys))
+            else:
+                self.potentialLemmaBtn.setChecked(False)
+                self.lemma_ranking(self.process_dropdown.currentIndex(), keys)
+                self.process_dropdown.currentIndexChanged.connect(
+                lambda: self.lemma_ranking(self.process_dropdown.currentIndex(), keys))
+        else: 
+            self.process_dropdown.hide()
+
+    def potential_lemma(self, index, token, ):
         text = (", ".join(self.t_thread.lemma_obj.show_potential_lemmas(token[index])))
+        print(self.t_thread.lemma_obj.show_lemma_ranking(token[index]))
         self.processText.setPlainText(text)
-        
+    
+    def lemma_ranking(self, index, token, ):
+        data = self.t_thread.lemma_obj.show_lemma_ranking(token[index]).to_string()
+        self.processText.setPlainText(data)
     # this set the behavior of the results using the combobox
     def combo_box_changed(self, i):
         if i == 0:
