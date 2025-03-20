@@ -106,7 +106,8 @@ class TagLemma:
 
     # =======================PRE-PROCESSING=======================
     def tokenize_input_text(self, input_text):
-        tokens = re.findall(r'\w+', input_text)
+        # Updated regex to include hyphen (-) as part of the word
+        tokens = re.findall(r'\w+(?:-\w+)*', input_text)
 
         return tokens
 
@@ -759,10 +760,10 @@ class TagLemma:
 
 if __name__ == "__main__":
     t = TagLemma()
-    str_input = "kumakain tumatakbos"
+    str_input = "araw-araw kahanaphanap"
     t.load_lemma_to_dfame('tagalog_lemmas.txt')
     t.load_formal_tagalog('formal_tagalog_sorted.txt')
-    t.lemmatize_no_print(str_input)
+    t.lemmatize(str_input)
     #print(t.show_annotation())
     #print(t.show_inflection_and_morpheme())
     #print(t.result_removed_sw)
@@ -774,18 +775,3 @@ if __name__ == "__main__":
     print(t.list_of_morphemes)
     print("Potential lemmas of kumakain based on its approximate morpheme pattern")"""
     
-    print(t.source_to_target)
-    keys = list(t.source_to_target.keys())
-    print(t.show_potential_lemmas(keys[0]))
-
-    # fuzzy matching module
-
-
-    # source is from source_to_target keys
-    # target is from source_to_target values
-    
-    #print(t.show_cosine_similarity("kumakain", "kumain"))
-    #print(t.show_lev_distance("kumakain", "kumain"))
-
-    # lemma
-    print(t.show_lemma_ranking(keys[0]))

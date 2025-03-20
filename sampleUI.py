@@ -5,7 +5,7 @@ from custombutton import CustomButton
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1073, 571)
+        MainWindow.resize(1280 , 720 )
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_main = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -18,6 +18,11 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.setContentsMargins(12, 0, 12, 0)
         self.horizontalLayout_3.setSpacing(21)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+
+        self.titleLogo = QtWidgets.QLabel(parent=self.headerWidget)
+        self.titleLogo.setObjectName("titleLogo")
+        self.horizontalLayout_3.addWidget(self.titleLogo)
+
         self.titleLabel = QtWidgets.QLabel(parent=self.headerWidget)
         self.titleLabel.setObjectName("titleLabel")
         self.horizontalLayout_3.addWidget(self.titleLabel)
@@ -97,10 +102,10 @@ class Ui_MainWindow(object):
         self.clearBtn = QtWidgets.QPushButton(parent=self.lemmaPage)
         self.clearBtn.setObjectName("clearBtn")
         
+        self.horizontalLayout_2.addItem(spacerItem)
+        self.horizontalLayout_2.addWidget(self.comboBox)
         self.horizontalLayout_2.addWidget(self.lemmatizeBtn)
         self.horizontalLayout_2.addWidget(self.importBtn)
-        self.horizontalLayout_2.addWidget(self.comboBox)
-        self.horizontalLayout_2.addItem(spacerItem)
         self.horizontalLayout_2.addWidget(self.clearBtn)
         self.horizontalLayout_2.addWidget(self.exportBtn)
 
@@ -185,7 +190,6 @@ class Ui_MainWindow(object):
         self.verticalLayout_6.addWidget(self.label_3)
         self.annotationTable = QtWidgets.QPlainTextEdit(parent=self.annotationPage)
         self.annotationTable.setObjectName("annotationTable")
-        item = QtWidgets.QTableWidgetItem()
         self.verticalLayout_6.addWidget(self.annotationTable)
         self.label_4 = QtWidgets.QLabel(parent=self.annotationPage)
         self.label_4.setObjectName("label_4")
@@ -221,5 +225,4 @@ class Ui_MainWindow(object):
         self.lemmaRankingBtn.setText(_translate("MainWindow", " Lemma Ranking"))
         self.label_3.setText(_translate("MainWindow", "Annotation"))
         self.label_4.setText(_translate("MainWindow", "Tagalog Input and Lemma Output will be annotated here       "))
-        self.titleLabel.setText(_translate("MainWindow", ""))
         self.featureBtn.setText(_translate("MainWindow", "Features"))

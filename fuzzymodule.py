@@ -11,6 +11,8 @@ class Dialog(QDialog):
         loadUi("dialog.ui", self)  # Load the .ui file dynamically
         self.setWindowTitle("Tagalog Lemmatizer Algorithm")
         self.design()
+        self.setLayout(self.verticalLayout)
+        self.setMinimumSize(935, 576)
         self.output.setReadOnly(True)
         self.keys_list = list(self.t.source_to_target.keys())
         self.values_list = list(self.t.source_to_target.values())

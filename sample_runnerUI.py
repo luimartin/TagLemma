@@ -39,7 +39,7 @@ class LemmatizeThread(QThread):
     def run(self):
         self.t = TagLemma.TagLemma()
         self.t.load_lemma_to_dfame('tagalog_lemmas.txt')
-        self.t.load_formal_tagalog('formal_tagalog.txt')
+        self.t.load_formal_tagalog('formal_tagalog_sorted.txt')
         result, lemmas, self.lemma_obj = self.t.lemmatize_no_print(self.text)
         valid_tokens = self.t.valid_tokens
         invalid_tokens = self.t.invalid_tokens
@@ -75,7 +75,9 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.processBtn.setSizePolicy(
             QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-
+        self.featureBtn.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        
         # this shit is added in the UI
         self.disable_features(False)
 
@@ -399,11 +401,16 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     # qmessagedialog for DRY blahvlahblah...
     def message_dialog(self, icon, message, title):
         msgBox = QMessageBox()
+        msgBox.setStyleSheet("""
+            background: #ecf6f9;
+            font-size: 16px;
+        """)
         msgBox.setIcon(icon)
         msgBox.setText(message)
         msgBox.setWindowTitle(title)
         msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
         msgBox.exec()
+
 
     # function to see changes in the mfing textedits
     def update_input_label(self):
@@ -505,10 +512,12 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.inputLabelChar = QLabel(parent=self.lemmaPage)
         self.inputLabelChar.setObjectName("inputLabelChar")
         self.inputLabelChar.setText("Character Count: 0")
+        self.inputLabelChar.setStyleSheet("font-size: 15px;")
         self.verticalLayout.addWidget(self.inputLabelChar)
         self.resultLabelChar = QLabel(parent=self.lemmaPage)
         self.resultLabelChar.setObjectName("resultLabelChar")
         self.resultLabelChar.setText("Character Count: 0")
+        self.resultLabelChar.setStyleSheet("font-size: 15px;")
         self.verticalLayout_2.addWidget(self.resultLabelChar)
         
         #lemmaPage
@@ -532,6 +541,11 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.horizontalLayout_7.addWidget(self.process_dropdown)
         self.verticalLayout_7.insertLayout(0, self.horizontalLayout_7)
 
+        pixmap = QPixmap("assets/10.png")
+        logo = pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        self.titleLogo.setPixmap(logo)
+        self.titleLabel.setText("Ariwanas")
+        self.horizontalLayout_3.setSpacing(0)
         self.centralwidget.setStyleSheet("""
                 background: #ecf6f9;
             """)
@@ -543,33 +557,39 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 border-left: none;
                 border-radius: 5px;
             """)
+        self.titleLogo.setStyleSheet("""
+                border-left: none;
+                border-right: none;  
+                border-radius: 1px;                                             
+            """)
         self.titleLabel.setStyleSheet("""
                 color: #ffffff;  
-                padding: 0px 5px;
                 font-size: 30px;
-                font-family: "Georgia";
+                font-family: "Montserrat";
                 font-weight: bold;
                 border-left: none;
                 border-right: none;  
                 border-radius: 1px;                                             
             """)
 
+
         self.featureBtn.setStyleSheet("""
                 QPushButton {
                     color: white;
-                    font-family: "Poppins"; 
+                    font-family: "Georgia"; 
+                    font-size: 20px;
                     border-radius: 2px;
                     border: 2px solid rgba(0, 0, 0, 0);
                 } 
                 QPushButton:pressed {
-                    background-color: black;  
+                    background-color: #8bdcd8;  
                 }                      
             """)
         self.stackedWidget.setStyleSheet("""  
                 QLabel{
                     background: rgb(0,0,0,0);
                     font-family: "Georgia"; 
-                    font-size: 16px;
+                    font-size: 20px;
                     font-weight: bold;
                     color: black; 
                 }       
@@ -660,7 +680,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.featureBtn.setIcon(QIcon("assets/feature-icon.png"))
         self.featureBtn.setIconSize(self.featureBtn.size())
         self.featureBtn.setLayoutDirection(
-            QtCore.Qt.LayoutDirection.RightToLeft)
+            QtCore.Qt.LayoutDirection.LeftToRight)
         self.featureBtn.setCursor(QtGui.QCursor(
             QtCore.Qt.CursorShape.PointingHandCursor))
 
@@ -717,9 +737,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.comboBox.setCursor(QtGui.QCursor(
             QtCore.Qt.CursorShape.PointingHandCursor))
         
-        pixmap = QPixmap("assets/logo_header.png")
-        logo = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        self.titleLabel.setPixmap(logo)
 
         inputIcon = f'<img src="assets/text.png" width="20" height="20">'
         self.inputLabel.setText(_translate(
