@@ -1,6 +1,7 @@
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos  # Import the new enum values
-    
+
+
 class pdf(FPDF):
     # Layout ('P','L')
     # Unit ('mm', 'cm', 'in')
@@ -12,6 +13,15 @@ class pdf(FPDF):
         # required to instatiate
         self.add_page()
         self.set_font('times', '', 12)
+        
+    def header(self):
+        self.image('assets/logo_pdf.png', x=50, y=8, w=25, h=25)
+        self.set_font('helvetica', 'B', 14)
+        self.set_y(15)
+        self.set_x(80)
+        self.cell(0, 10, 'Tagalog Lemmatizer Algorithm', align='L')
+        self.ln(30) 
+
     
     def add_list(self, items):
         # cell arguments(width, height(space between cells), content, xpos = x cursor position, ypos = y cursor position)

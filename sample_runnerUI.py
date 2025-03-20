@@ -499,7 +499,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         _translate = QCoreApplication.translate
         # ======================================================================
         self.setWindowTitle("Tagalog Lemmatizer Algorithm")
-        self.setWindowIcon(QIcon("assets/logo.png"))
+        self.setWindowIcon(QIcon("assets/logo_pdf.png"))
 
         # labels for character count in text edits
         self.inputLabelChar = QLabel(parent=self.lemmaPage)
@@ -716,6 +716,10 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
         self.comboBox.setCursor(QtGui.QCursor(
             QtCore.Qt.CursorShape.PointingHandCursor))
+        
+        pixmap = QPixmap("assets/logo_header.png")
+        logo = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        self.titleLabel.setPixmap(logo)
 
         inputIcon = f'<img src="assets/text.png" width="20" height="20">'
         self.inputLabel.setText(_translate(
@@ -728,8 +732,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         validationIcon = f'<img src="assets/shield.png" width="20" height="20">'
         self.label.setText(_translate(
             "MainWindow", f'{validationIcon} Validation'))
-
-
 
         displayIcon = f'<img src="assets/display.png" width="15" height="15">'
         self.label_5.setText(_translate(

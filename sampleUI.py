@@ -221,5 +221,5 @@ class Ui_MainWindow(object):
         self.lemmaRankingBtn.setText(_translate("MainWindow", " Lemma Ranking"))
         self.label_3.setText(_translate("MainWindow", "Annotation"))
         self.label_4.setText(_translate("MainWindow", "Tagalog Input and Lemma Output will be annotated here       "))
-        self.titleLabel.setText(_translate("MainWindow", "Ta. L. A."))
+        self.titleLabel.setText(_translate("MainWindow", ""))
         self.featureBtn.setText(_translate("MainWindow", "Features"))
