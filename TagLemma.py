@@ -3,6 +3,7 @@ import pandas as pd
 from collections import Counter
 import math
 import re
+import inf_morph_stripping_ as ms
 
 
 class TagLemma:
@@ -83,6 +84,7 @@ class TagLemma:
         self.invalid_tokens = None  # forda UI
         self.lemma = []  # forda UI
         self.annotated_lemma = {}
+        self.curr_token = None
         self.input, self.result = '', ''
 
     # =======================LOADING OF FILES=======================
@@ -215,6 +217,11 @@ class TagLemma:
 
         return morpheme_word
 
+    def get_morpheme_of_inf(self, token):
+        self.morpheme = ms.get_morpheme(token)
+        self.list_of_morphemes.append(self.morpheme)
+        return self.morpheme
+
     # Reduce the Search Space by Using the Extracted Morpheme of the Word
     def reduce_search_space(self, word, pattern):
         # Patterns for Getting the Potential Lemmas
@@ -242,10 +249,8 @@ class TagLemma:
         return bool(re.search(combined_regex_pattern, word))
 
     def get_potential_lemmas(self, token, morpheme):
-        filtered_lemmas = self.raw_lemmas[self.raw_lemmas['WORDS'].str.len() <= len(
-            token)]
-        potential_lemmas = filtered_lemmas[filtered_lemmas['WORDS'].apply(
-            lambda x: self.reduce_search_space(x, morpheme))]
+        filtered_lemmas = self.raw_lemmas[self.raw_lemmas['WORDS'].str.len() <= len(token)]
+        potential_lemmas = filtered_lemmas[filtered_lemmas['WORDS'].apply(lambda x: self.reduce_search_space(x, morpheme))]
         
         return potential_lemmas
 
@@ -377,26 +382,25 @@ class TagLemma:
         # Fuzzy Matching Algorithm Implementations
         potential_lemmas['Cosine Similarity'] = potential_lemmas['WORDS'].apply(
             lambda x: self.cosine_similarity(token, x))
-        potential_lemmas['Cosine Distance'] = potential_lemmas['WORDS'].apply(
-            lambda x: self.cosine_distance_percentage(token, x))
+        #potential_lemmas['Cosine Distance'] = potential_lemmas['WORDS'].apply(
+            #lambda x: self.cosine_distance_percentage(token, x))
         potential_lemmas['LCS'] = potential_lemmas['WORDS'].apply(
             lambda x: self.longestCommonSubstr(token, x))
-        potential_lemmas['Jaccard'] = potential_lemmas['WORDS'].apply(
-            lambda x: self.jaccardIndex(token, x))
+        #potential_lemmas['Jaccard'] = potential_lemmas['WORDS'].apply(
+            #lambda x: self.jaccardIndex(token, x))
         potential_lemmas['Levenshtein'] = potential_lemmas['WORDS'].apply(
             lambda x: self.levenshtein_distance(token, x))
 
         # Ranks the Fuzzy Matched Lemmas
         potential_lemmas['Rank Scores'] = (
-            (.30 * potential_lemmas['Cosine Similarity']) +
-            (.20 * potential_lemmas['Cosine Distance']) +
-            (.15 * potential_lemmas['LCS']) +
-            (.20 * potential_lemmas['Jaccard']) +
-            (.15 * potential_lemmas['Levenshtein'])
+            (.75 * potential_lemmas['Cosine Similarity']) +
+            #(.05 * potential_lemmas['Cosine Distance']) +
+            (.05 * potential_lemmas['LCS']) +
+            (.20 * potential_lemmas['Levenshtein'])
         )
 
         threshold_potential_lemmas = potential_lemmas[
-            (potential_lemmas['Cosine Similarity'] >= 0.80)
+            (potential_lemmas['Cosine Similarity'] >= 0)
         ]
 
         return threshold_potential_lemmas
@@ -404,11 +408,20 @@ class TagLemma:
 # =======================CODE FOR DISPLAY RELEVANT INFO IN LEMMATIZATION SYSTEM=======================
     def show_best_lemma(self, potential_lemmas):
         if not potential_lemmas.empty:
-            sorted_lemmas = potential_lemmas.sort_values(
-                by='Rank Scores', ascending=False)
-            sorted_lemmas = sorted_lemmas.head(10)
-            print("Rank ed Scored Lemmas: ", sorted_lemmas)
-            return sorted_lemmas.iloc[0]['WORDS']
+            if self.isLemmaAlready(self.curr_token):  # If token is already a lemma
+                if self.morpheme in potential_lemmas['WORDS'].values:
+                    morpheme_row = potential_lemmas[potential_lemmas['WORDS'] == self.morpheme]
+                    cosine_similarity = morpheme_row['Cosine Similarity'].values[0]  # Assuming it's a fraction
+
+                    if cosine_similarity <= 0.85:  # If similarity is 85% or below
+                        print(f"Morpheme '{self.morpheme}' has low similarity ({cosine_similarity * 100:.2f}%), treating as a new token.")
+                        return self.morpheme  # Treat as a new token
+
+            # If token is NOT already a lemma, return the highest-ranked lemma
+            sorted_lemmas = potential_lemmas.sort_values(by='Rank Scores', ascending=False)
+            best_lemma = sorted_lemmas.iloc[0]['WORDS']  # Get the highest-ranked lemma
+            print("Ranked Scored Lemmas:\n", sorted_lemmas)
+            return best_lemma
 
         return self.morpheme
 
@@ -660,6 +673,8 @@ class TagLemma:
                         
 
                     else:
+                        
+
                         self.lemmatized_text.append(token)
                 else:
                     self.lemmatized_text.append(token)
@@ -699,11 +714,15 @@ class TagLemma:
                 if self.to_lemmatize_tokens.index(token) not in self.not_to_lemmatize_tokens_index:
 
                     # The Current Token Should not be in Lemma Form in Order to Lemmatize
-                    if self.isLemmaAlready(token) is False:
+                    if True:
+                        # Base variable for handling token
+                        self.curr_token = token
 
                         self.list_of_lemmatizable_tokens.append(token)
+
                         # Pre-processing Stage
-                        morpheme = self.get_morpheme(token)
+                        morpheme = self.get_morpheme_of_inf(token)
+                        
                         potential_lemmas = self.get_potential_lemmas(
                             token, morpheme)
 
