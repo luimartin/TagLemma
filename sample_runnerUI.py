@@ -9,7 +9,7 @@ import TagLemma
 import fitz
 import docx
 import json
-import pandas as pd
+import time
 from tabulate import tabulate
 from fuzzymodule import Dialog
 """
@@ -37,10 +37,15 @@ class LemmatizeThread(QThread):
         self.lemma_object = None
 
     def run(self):
-        self.t = TagLemma.TagLemma()
+        self.t = TagLemma.TagLemma() 
         self.t.load_lemma_to_dfame('tagalog_lemmas.txt')
-        self.t.load_formal_tagalog('formal_tagalog_sorted.txt')
+        self.t.load_formal_tagalog('dataset/formal_tagalog.txt')
+
+        start = time.perf_counter()
         result, lemmas, self.lemma_obj = self.t.lemmatize_no_print(self.text)
+        end = time.perf_counter()
+        print(f"Time Elapsed: {end - start}")
+
         valid_tokens = self.t.valid_tokens
         invalid_tokens = self.t.invalid_tokens
         tokenized = self.t.tokenized
@@ -64,8 +69,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.design()
         self.t_thread = None
         self.taglemma = TagLemma.TagLemma()
-
         self.headerWidget.setMinimumHeight(110)
+
         # set the size for the btns in landing page
         self.lemmaBtn.setSizePolicy(
             QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
@@ -77,10 +82,9 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.featureBtn.setSizePolicy(
             QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        
+
         # this shit is added in the UI
         self.disable_features(False)
-
 
         # stacked widget pages connectoers
         self.featureBtn.clicked.connect(self.switch_to_feature)
@@ -88,7 +92,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.validationBtn.clicked.connect(self.switch_to_validation)
         self.processBtn.clicked.connect(self.switch_to_process)
         self.annotationBtn.clicked.connect(self.switch_to_annotation)
-
 
         # lemmaPage button connectors
         self.clearBtn.clicked.connect(self.clear)
@@ -109,13 +112,11 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.resultText.textChanged.connect(self.update_result_label)
         self.inputText.textChanged.connect(self.max_char_count)
 
-
         # validationPage button connectors
         self.validText.setReadOnly(True)
         self.validTokenBtn.clicked.connect(self.valid_tokens_function)
         self.invalidTokenBtn.clicked.connect(self.invalid_tokens_function)
         self.comboBox.setEnabled(False)
-
 
         # processPage button connectors
         self.tokenizationBtn.clicked.connect(self.get_tokenized)
@@ -128,7 +129,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.potentialLemmaBtn.clicked.connect(self.toggle_buttons)
         self.lemmaRankingBtn.clicked.connect(self.toggle_buttons)
         self.fuzzyBtn.clicked.connect(self.fuzzy_dialog)
-
 
         # annotationPage
         self.annotationTable.setReadOnly(True)
@@ -144,7 +144,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.verticalLayout_6.addLayout(self.horizontalLayout_7)
         self.annotationTable.setReadOnly(True)
         self.export_annotation.clicked.connect(self.save_json)
-        
 
     def fuzzy_dialog(self):
         self.process_dropdown.hide()
@@ -154,46 +153,49 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
             dialog.exec()
         else:
-            self.message_dialog(QMessageBox.Icon.Warning,"No Fuzzy Matching Process to Display", "Warning")
+            self.message_dialog(QMessageBox.Icon.Warning,
+                                "No Fuzzy Matching Process to Display", "Warning")
+
 
     def toggle_buttons(self):
         sender = self.sender()  # Get the button that was clicked asdasd
         self.process_dropdown.clear()
         if sender.isChecked():
-            keys = list(self.source_to_target.keys())
-            self.process_dropdown.addItems(keys)
+            sender.setEnabled(False)
+            self.process_dropdown.addItems(self.keys)
             self.process_dropdown.show()
-            if not keys:
+            if not self.keys:
                 self.process_dropdown.hide()
             if sender == self.potentialLemmaBtn:
                 self.lemmaRankingBtn.setChecked(False)
+                self.lemmaRankingBtn.setEnabled(True)
                 self.potential_lemma(
-                    self.process_dropdown.currentIndex(), keys)
+                    self.process_dropdown.currentIndex())
                 self.process_dropdown.currentIndexChanged.connect(
-                    lambda: self.potential_lemma(self.process_dropdown.currentIndex(), keys))
+                    lambda: self.potential_lemma(self.process_dropdown.currentIndex()))
             else:
                 self.potentialLemmaBtn.setChecked(False)
-                self.lemma_ranking(self.process_dropdown.currentIndex(), keys)
+                self.potentialLemmaBtn.setEnabled(True)
+                self.lemma_ranking(self.process_dropdown.currentIndex())
                 self.process_dropdown.currentIndexChanged.connect(
-                    lambda: self.lemma_ranking(self.process_dropdown.currentIndex(), keys))
+                    lambda: self.lemma_ranking(self.process_dropdown.currentIndex()))
         else:
             self.process_dropdown.hide()
 
 
-    def potential_lemma(self, index, token):
-        if token:
+    def potential_lemma(self, index):
+        if self.keys:
             text = (
-                ", ".join(self.t_thread.lemma_obj.show_potential_lemmas(token[index])))
-            print(self.t_thread.lemma_obj.show_lemma_ranking(token[index]))
+                ", ".join(self.t_thread.lemma_obj.show_potential_lemmas(self.keys[index])))
             self.processText.setPlainText(text)
         else:
             self.processText.setPlainText("No potential lemmas to display.")
 
 
-    def lemma_ranking(self, index, token):
-        if token:
+    def lemma_ranking(self, index):
+        if self.keys:
             # Get the DataFrame or string from show_lemma_ranking
-            data = self.t_thread.lemma_obj.show_lemma_ranking(token[index])
+            data = self.t_thread.lemma_obj.show_lemma_ranking(self.keys[index])
 
             # Convert the DataFrame to a list of lists for tabulate
             table_data = data.values.tolist()
@@ -210,8 +212,9 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             self.processText.setPlainText(formatted_data)
         else:
             self.processText.setPlainText("No lemma ranking to display.")
+    
+    
     # this set the behavior of the results using the combobox
-
     def combo_box_changed(self, i):
         if i == 0:
             self.resultText.setPlainText(self.result)
@@ -222,8 +225,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             result_str = " ".join(self.result_removed_sw)
             self.resultText.setPlainText(result_str)
 
-    # sets the maximum char count for the input of words
 
+    # sets the maximum char count for the input of words
     def max_char_count(self):
         text = self.inputText.toPlainText()
         self.max = 50000
@@ -237,59 +240,57 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             cursor.setPosition(pos)
             self.inputText.setTextCursor(cursor)
 
-    # this disable other features of the system when the no lemmatization occurs
 
+    # this disable other features of the system when the no lemmatization occurs
     def disable_features(self, bol):
         self.validationBtn.setEnabled(bol)
         self.annotationBtn.setEnabled(bol)
         self.processBtn.setEnabled(bol)
 
-    # clears the inputs
 
+    # clears the inputs
     def clear(self):
         self.comboBox.setCurrentIndex(0)
         self.comboBox.setEnabled(False)
         self.disable_features(False)
         self.inputText.clear()
+        self.process_dropdown.hide()
         self.resultText.clear()
         self.comboBox.hide()
         print("Cleared")
 
-    def lemmatize(self):
 
+    def lemmatize(self):
         text = self.inputText.toPlainText()
         count = len(self.inputText.toPlainText())
+
         if not text.strip():
             # # handols empty inputs nyork
             self.message_dialog(QMessageBox.Icon.Warning,
-                "Input cannot be empty. Enter text to continue.", "Warning")
+                                "Input cannot be empty. Enter text to continue.", "Warning")
             return
         
         # Check if the input contains only numbers
         if text.isdigit():
             self.message_dialog(QMessageBox.Icon.Warning,
-                "Input cannot contain only numbers. Enter valid text.", "Warning")
+                                "Input cannot contain only numbers. Enter valid text.", "Warning")
             return
 
         # Check if the input contains only special characters
         if all(not char.isalnum() for char in text):
             self.message_dialog(QMessageBox.Icon.Warning,
-                "Input cannot contain only special characters. Enter valid text.", "Warning")
+                                "Input cannot contain only special characters. Enter valid text.", "Warning")
             return
-        
+
         stopwords = self.taglemma.STOP_WORDS
         words = text.split()
         if all(word.lower() in stopwords for word in words) or count <= 3:
             self.message_dialog(QMessageBox.Icon.Warning,
-                "Input cannot contain only stopwords. Enter valid text.", "Warning")
+                                "Input cannot contain only stopwords. Enter valid text.", "Warning")
             return
 
         self.resultText.setPlainText("Please Wait, Currently Lemmatizing.....")
         self.comboBox.setCurrentIndex(0)
-        self.validText.setPlainText("")
-        self.processText.setPlainText("")
-        self.annotationTable.setPlainText("")
-
         """
         self.progressDialog = QProgressDialog(
             "Lemmatizing...", "Cancel", 0, 0, self)
@@ -303,11 +304,11 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
         # Starts the lemmatization sa ibang thread
         self.t_thread = LemmatizeThread(text)
-
         self.thread = self.t_thread
         # Connects signal to UI update
         self.thread.finished.connect(self.on_lemmatization_complete)
         self.thread.start()
+
 
     # update UI from another threadsasdasd
     def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens,
@@ -328,14 +329,21 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.comboBox.setEnabled(True)
         self.disable_features(True)
         self.comboBox.show()
+        self.keys = list(self.source_to_target.keys())
         # self.progressDialog.close()
+
+        self.validText.setPlainText("")
+        self.processText.setPlainText("")
+        self.annotationTable.setPlainText("")
+        self.process_dropdown.hide()
+        self.potentialLemmaBtn.setEnabled(True)
+        self.lemmaRankingBtn.setEnabled(True)
 
         if annotation:
             temp = json.dumps(annotation, indent=6)
             self.annotationTable.setPlainText(temp)
         else:
             self.annotationTable.setPlainText("No annotation to display.")
-        
 
 
     def valid_tokens_function(self):
@@ -348,6 +356,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                                 "There was no valid tokens", "Notice")
             return
         self.validText.setPlainText(result_str)
+
 
     def invalid_tokens_function(self):
         print(self.invalid_tokens)
@@ -362,8 +371,10 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
         self.validText.setPlainText(result_str)
 
+
     # Exclude invalid words on result & Exclude stop words on result
     def lemma(self):
+
         print(self.lemmas)
         result_str = " ".join(self.lemmas)
         self.resultText.setPlainText(result_str)
@@ -381,7 +392,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         if file_path:
             try:
                 # initiate pdf class
-                page = pdf.pdf()
+                page = pdf.PDF()
                 # printing process
                 page.add_list("Input:")
                 page.add_list(self.inputText.toPlainText())
@@ -395,6 +406,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 self.message_dialog(QMessageBox.Icon.Information,
                                     f"File saved successfully: {file_path}", "Success")
             except Exception as e:
+                print(e)
                 self.message_dialog(QMessageBox.Icon.Warning,
                                     f"Error saving file: {e}", "Warning")
 
@@ -411,8 +423,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
         msgBox.exec()
 
-
     # function to see changes in the mfing textedits
+
     def update_input_label(self):
         x = len(self.inputText.toPlainText())
         self.inputLabelChar.setText(f"Character Count: {x}")
@@ -422,12 +434,16 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.resultLabelChar.setText(f"Character Count: {x}")
 
     def get_tokenized(self):
+        self.potentialLemmaBtn.setEnabled(True)
+        self.lemmaRankingBtn.setEnabled(True)
         self.process_dropdown.hide()
         result_str = ", ".join(self.tokenized)
         self.processText.setPlainText(f'Tokens = [{result_str}]',)
         self.processText
 
     def display_morphemes(self):
+        self.potentialLemmaBtn.setEnabled(True)
+        self.lemmaRankingBtn.setEnabled(True)
         self.process_dropdown.hide()
         if self.morphemes:
             result_str = "\n".join(self.morphemes)
@@ -483,6 +499,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 self.message_dialog(QMessageBox.Icon.Information,
                                     f"File saved successfully: {file_path}", "Success")
             except Exception as e:
+                print(e)
                 self.message_dialog(QMessageBox.Icon.Warning,
                                     f"Error saving file: {e}", "Warning")
 
@@ -519,9 +536,9 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.resultLabelChar.setText("Character Count: 0")
         self.resultLabelChar.setStyleSheet("font-size: 15px;")
         self.verticalLayout_2.addWidget(self.resultLabelChar)
-        
-        #lemmaPage
-               
+
+        # lemmaPage
+
         processIcon = f'<img src="assets/process.png" width="20" height="20">'
         self.label_2 = QLabel(parent=self.processPage)
         self.label_2.setObjectName("label_2")
@@ -538,13 +555,15 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.horizontalLayout_7.addItem(self.horizontalSpacer_4)
         self.process_dropdown = QComboBox(parent=self.processPage)
         self.process_dropdown.setObjectName(u"process_dropdown")
+        self.process_dropdown.setMinimumWidth(150)
         self.horizontalLayout_7.addWidget(self.process_dropdown)
         self.verticalLayout_7.insertLayout(0, self.horizontalLayout_7)
 
-        pixmap = QPixmap("assets/10.png")
-        logo = pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        pixmap = QPixmap("assets/11.png")
+        logo = pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio,
+                             Qt.TransformationMode.SmoothTransformation)
         self.titleLogo.setPixmap(logo)
-        self.titleLabel.setText("Ariwanas")
+        self.titleLabel.setText("TA.L.A. (Tagalog Lemmatization Algorithm)")
         self.horizontalLayout_3.setSpacing(0)
         self.centralwidget.setStyleSheet("""
                 background: #ecf6f9;
@@ -565,18 +584,17 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.titleLabel.setStyleSheet("""
                 color: #ffffff;  
                 font-size: 30px;
-                font-family: "Montserrat";
+                font-family: "Consolas";
                 font-weight: bold;
                 border-left: none;
                 border-right: none;  
                 border-radius: 1px;                                             
             """)
 
-
         self.featureBtn.setStyleSheet("""
                 QPushButton {
                     color: white;
-                    font-family: "Georgia"; 
+                    font-family: "Consolas"; 
                     font-size: 20px;
                     border-radius: 2px;
                     border: 2px solid rgba(0, 0, 0, 0);
@@ -588,7 +606,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.stackedWidget.setStyleSheet("""  
                 QLabel{
                     background: rgb(0,0,0,0);
-                    font-family: "Georgia"; 
+                    font-family: "Consolas"; 
                     font-size: 20px;
                     font-weight: bold;
                     color: black; 
@@ -612,7 +630,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     background: #ffffff;
                     border: 2px solid black;
                     border-radius: 5px;
-                    font-size: 15px;
+                    font-size: 16px;
                     font-family: "Consolas";   
                 }
                 QComboBox {
@@ -620,7 +638,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     color: black;
                     border: 2px solid black;
                     padding: 5px;
-                    font-family: "Segoe UI";
+                    font-family: "Consolas";
                     font-size: 14px;
                 }
                 
@@ -716,27 +734,31 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
         self.tokenizationBtn.setIcon(QIcon("assets/box.png"))
         self.tokenizationBtn.setIconSize(QSize(20, 18))
-        self.tokenizationBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        
+        self.tokenizationBtn.setCursor(QtGui.QCursor(
+            QtCore.Qt.CursorShape.PointingHandCursor))
+
         self.morphemeBtn.setIcon(QIcon("assets/jigsaw.png"))
         self.morphemeBtn.setIconSize(QSize(20, 18))
-        self.morphemeBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        
+        self.morphemeBtn.setCursor(QtGui.QCursor(
+            QtCore.Qt.CursorShape.PointingHandCursor))
+
         self.potentialLemmaBtn.setIcon(QIcon("assets/search.png"))
         self.potentialLemmaBtn.setIconSize(QSize(20, 18))
-        self.potentialLemmaBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        
+        self.potentialLemmaBtn.setCursor(QtGui.QCursor(
+            QtCore.Qt.CursorShape.PointingHandCursor))
+
         self.fuzzyBtn.setIcon(QIcon("assets/fog.png"))
         self.fuzzyBtn.setIconSize(QSize(20, 18))
-        self.fuzzyBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        
+        self.fuzzyBtn.setCursor(QtGui.QCursor(
+            QtCore.Qt.CursorShape.PointingHandCursor))
+
         self.lemmaRankingBtn.setIcon(QIcon("assets/ranking.png"))
         self.lemmaRankingBtn.setIconSize(QSize(20, 18))
-        self.lemmaRankingBtn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.lemmaRankingBtn.setCursor(QtGui.QCursor(
+            QtCore.Qt.CursorShape.PointingHandCursor))
 
         self.comboBox.setCursor(QtGui.QCursor(
             QtCore.Qt.CursorShape.PointingHandCursor))
-        
 
         inputIcon = f'<img src="assets/text.png" width="20" height="20">'
         self.inputLabel.setText(_translate(

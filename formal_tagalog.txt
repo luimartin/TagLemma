@@ -35,7 +35,6 @@ naglalagda
 naghahayag
 konstitusyong
 artikulo
-i
 pambansang
 teritoryo
 binubuo
@@ -499,12 +498,10 @@ pagkaparusa
 pagkaabswelto
 magiging
 hadlang
-ding
 ex
 post
 facto
 bill
-iv
 pagkamamamayan
 sumusunod
 yaong
@@ -699,7 +696,6 @@ ari
 kontrolado
 subsidyari
 magbibitiw
-rin
 mahirang
 nalikha
 naragdagan
@@ -719,7 +715,6 @@ makialam
 maaari
 pagkakitaan
 tanggapan
-siyang
 tawagin
 magpasya
 magsimula
@@ -827,8 +822,6 @@ nakatakdang
 interpelasyon
 naiharap
 katanungang
-kundi
-ring
 sumaklaw
 kaugnay
 ilalahad
@@ -2519,7 +2512,6 @@ malaking
 mas
 pamunuan
 maliit
-rin
 bituin
 inilagay
 buong
@@ -2720,7 +2712,6 @@ itinago
 sinong
 nagsabi
 iniutos
-mong
 kakainan
 itong
 nilinlang
@@ -3946,13 +3937,11 @@ malungkot
 pakinggan
 sinasabi
 makikilala
-ring
 maagang
 lalagyang
 pagkaubos
 mababang
 naupo
-di
 parang
 tudla
 pana

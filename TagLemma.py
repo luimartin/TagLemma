@@ -62,7 +62,8 @@ class TagLemma:
             'panahon', 'pangalawa', 'para', 'paraan', 'pareho', 'pero',
             'sa', 'saan', 'sarili', 'sila', 'sino', 'siya', 'tatlo', 'tayo',
             'tulad', 'tungkol', 'una', 'walang', 'ba', 'eh', 'kasi', 'lang', 'mo', 'naman', 'opo', 'po', 'si', 'talaga',
-            'yung', 'pwede', 'pwede', 'uli', 'makita', 'noong', 'nasa', 'nang', 'mong'
+            'yung', 'pwede', 'pwedeng', 'uli', 'makita', 'noong', 'nasa', 'nang', 'mong', 'ring', 'rin', 'pang', 'siyang', 'iyong', 'kaming'
+            , 'ding', 'kundi', 'kundiman'
         ]
 
         self.dframe = None
@@ -760,9 +761,9 @@ class TagLemma:
 
 if __name__ == "__main__":
     t = TagLemma()
-    str_input = "araw-araw kahanaphanap"
-    t.load_lemma_to_dfame('tagalog_lemmas.txt')
-    t.load_formal_tagalog('formal_tagalog_sorted.txt')
+    str_input = "kain mong ring ding determinasyon kumakain"
+    t.load_lemma_to_dfame('dataset/tagalog_lemmas.txt')
+    t.load_formal_tagalog('dataset/formal_tagalog.txt')
     t.lemmatize(str_input)
     #print(t.show_annotation())
     #print(t.show_inflection_and_morpheme())
