@@ -64,14 +64,14 @@ def remove_sentences_or_phrases(input_file, output_file):
     Removes entries that are sentences or phrases (contain spaces) from the input file.
     Writes only single-word entries to the output file.
     """
-    filtered_words = []
+    filtered_words = set()
 
     with open(input_file, 'r', encoding='utf-8') as infile:
         for line in infile:
             word = line.strip()
             # Include only single words (no spaces)
             if " " not in word:
-                filtered_words.append(word)
+                filtered_words.add(word)
     filtered_words = sorted(filtered_words)
     # Write the filtered words to the output file
     with open(output_file, 'w', encoding='utf-8') as outfile:
@@ -82,5 +82,5 @@ def remove_sentences_or_phrases(input_file, output_file):
 """input_file = "dataset/konstitusyon.txt"
 output_file = input('Enter Output Filename: ')
 ilagay(input_file, output_file)"""
-remove_sentences_or_phrases('tagalog_lemmas.txt', 'dataset/tagalog_lemmas.txt')
+remove_sentences_or_phrases('dataset/tagalog_lemmas.txt', 'tagalog_lemmas.txt')
 #combine_and_sort("dataset/bible.txt", "dataset/line_konstitusyon.txt", "dataset/formal_tagalog.txt")

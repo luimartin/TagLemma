@@ -38,7 +38,7 @@ class LemmatizeThread(QThread):
 
     def run(self):
         self.t = TagLemma.TagLemma() 
-        self.t.load_lemma_to_dfame('tagalog_lemmas.txt')
+        self.t.load_lemma_to_dfame('dataset/tagalog_lemmas.txt')
         self.t.load_formal_tagalog('dataset/formal_tagalog.txt')
 
         start = time.perf_counter()
@@ -160,9 +160,10 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     def toggle_buttons(self):
         sender = self.sender()  # Get the button that was clicked asdasd
         self.process_dropdown.clear()
+        self.process_dropdown.addItems(self.keys)
         if sender.isChecked():
             sender.setEnabled(False)
-            self.process_dropdown.addItems(self.keys)
+            
             self.process_dropdown.show()
             if not self.keys:
                 self.process_dropdown.hide()
@@ -179,15 +180,13 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 self.lemma_ranking(self.process_dropdown.currentIndex())
                 self.process_dropdown.currentIndexChanged.connect(
                     lambda: self.lemma_ranking(self.process_dropdown.currentIndex()))
-        else:
-            self.process_dropdown.hide()
 
 
     def potential_lemma(self, index):
         if self.keys:
             text = (
                 ", ".join(self.t_thread.lemma_obj.show_potential_lemmas(self.keys[index])))
-            self.processText.setPlainText(text)
+            self.processText.setPlainText(f'Potential Lemmas:\n\n{text}')
         else:
             self.processText.setPlainText("No potential lemmas to display.")
 
@@ -209,7 +208,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 floatfmt=".4f",  # Format float values to 4 decimal places
                 stralign="center"
             )
-            self.processText.setPlainText(formatted_data)
+            self.processText.setPlainText(f'Lemma Ranking:\n\n{formatted_data}')
         else:
             self.processText.setPlainText("No lemma ranking to display.")
     
@@ -347,7 +346,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
 
     def valid_tokens_function(self):
-        print(self.valid_tokens)
         result_str = ", ".join(self.valid_tokens)
 
         if not result_str.strip():
@@ -355,12 +353,10 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             self.message_dialog(QMessageBox.Icon.Information,
                                 "There was no valid tokens", "Notice")
             return
-        self.validText.setPlainText(result_str)
+        self.validText.setPlainText(f'Valid Tokens: \n\n{result_str}')
 
 
     def invalid_tokens_function(self):
-        print(self.invalid_tokens)
-
         result_str = ", ".join(self.invalid_tokens)
 
         if not result_str.strip():
@@ -369,7 +365,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                                 "There was no invalid tokens", "Notice")
             return
 
-        self.validText.setPlainText(result_str)
+        self.validText.setPlainText(f'Invalid Tokens: \n\n{result_str}')
 
 
     # Exclude invalid words on result & Exclude stop words on result
@@ -423,8 +419,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
         msgBox.exec()
 
-    # function to see changes in the mfing textedits
 
+    # function to see changes in the mfing textedits 
     def update_input_label(self):
         x = len(self.inputText.toPlainText())
         self.inputLabelChar.setText(f"Character Count: {x}")
@@ -438,7 +434,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.lemmaRankingBtn.setEnabled(True)
         self.process_dropdown.hide()
         result_str = ", ".join(self.tokenized)
-        self.processText.setPlainText(f'Tokens = [{result_str}]',)
+        self.processText.setPlainText(f'Tokenization:\n\nTokens = [{result_str}]',)
         self.processText
 
     def display_morphemes(self):
@@ -447,7 +443,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.process_dropdown.hide()
         if self.morphemes:
             result_str = "\n".join(self.morphemes)
-            self.processText.setPlainText(result_str)
+            self.processText.setPlainText(f'Morphemes:\n\n{result_str}')
         else:
             self.processText.setPlainText("No morphemes to display.")
 
@@ -631,7 +627,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     border: 2px solid black;
                     border-radius: 5px;
                     font-size: 16px;
-                    font-family: "Consolas";   
+                    font-family: "Consolas";  
+                    padding-left: 10px;
                 }
                 QComboBox {
                     background: white;

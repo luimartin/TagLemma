@@ -191,9 +191,6 @@ class Ui_MainWindow(object):
         self.annotationTable = QtWidgets.QPlainTextEdit(parent=self.annotationPage)
         self.annotationTable.setObjectName("annotationTable")
         self.verticalLayout_6.addWidget(self.annotationTable)
-        self.label_4 = QtWidgets.QLabel(parent=self.annotationPage)
-        self.label_4.setObjectName("label_4")
-        self.verticalLayout_6.addWidget(self.label_4, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         self.stackedWidget.addWidget(self.annotationPage)
         
         MainWindow.setCentralWidget(self.centralwidget)
@@ -224,5 +221,4 @@ class Ui_MainWindow(object):
         self.fuzzyBtn.setText(_translate("MainWindow", " Fuzzy Matching"))
         self.lemmaRankingBtn.setText(_translate("MainWindow", " Lemma Ranking"))
         self.label_3.setText(_translate("MainWindow", "Annotation"))
-        self.label_4.setText(_translate("MainWindow", "Tagalog Input and Lemma Output will be annotated here       "))
         self.featureBtn.setText(_translate("MainWindow", "Features"))

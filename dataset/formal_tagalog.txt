@@ -10001,6 +10001,7 @@ mapapatakbo
 mapapatawad
 mapapatay
 mapapatirapa
+mapapasok
 mapapatunayan
 mapapatunayang
 mapapawalang
@@ -13572,6 +13573,8 @@ nilagot
 nilagpasan
 nilagyan
 nilait
+nilakad
+nilalakad
 nilakaran
 nilakasan
 nilalabag
@@ -16554,6 +16557,7 @@ pinakamababang
 pinakamabilis
 pinakamabuti
 pinakamadaling
+papanoorin
 pinakamagagaling
 pinakamagaling
 pinakamaganda
@@ -20264,3 +20268,9 @@ zuriah
 zuriel
 zurisaddai
 zuzita
+nagkakalipon
+bumeto
+yutiliti
+magkapamilya
+betohan
+pampartido
