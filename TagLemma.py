@@ -399,9 +399,9 @@ class TagLemma:
 
         # Ranks the Fuzzy Matched Lemmas
         potential_lemmas['Rank Scores'] = (
-            (.75 * potential_lemmas['Cosine Similarity']) +
+            (.70 * potential_lemmas['Cosine Similarity']) +
             #(.05 * potential_lemmas['Cosine Distance']) +
-            (.05 * potential_lemmas['LCS']) +
+            (.10 * potential_lemmas['LCS']) +
             (.20 * potential_lemmas['Levenshtein'])
         )
 
@@ -414,24 +414,45 @@ class TagLemma:
 # =======================CODE FOR DISPLAY RELEVANT INFO IN LEMMATIZATION SYSTEM=======================
     def show_best_lemma(self, potential_lemmas):
         if not potential_lemmas.empty:
-            if self.isLemmaAlready(self.curr_token):  # If token is already a lemma
+            # Sort lemmas by Rank Scores in Descending Order
+            sorted_lemmas = potential_lemmas.sort_values(by='Rank Scores', ascending=False)
+
+            # Only Apply Filtering if it is aldready a lemma
+            # For Infinitive to Root Only
+            if self.isLemmaAlready(self.curr_token):  
+                
                 if self.morpheme in potential_lemmas['WORDS'].values:
                     morpheme_row = potential_lemmas[potential_lemmas['WORDS'] == self.morpheme]
-                    cosine_similarity = morpheme_row['Cosine Similarity'].values[0]  # Assuming it's a fraction
+                    cosine_similarity = morpheme_row['Cosine Similarity'].values[0]
 
-                    if cosine_similarity <= 0.85:  # If similarity is 85% or below
-                        print(f"Morpheme '{self.morpheme}' has low similarity ({cosine_similarity * 100:.2f}%), treating as a new token.")
-                        return self.morpheme  # Treat as a new token
+                    # If greater then 85, then Prioritize the Highest Rank duh
+                    if cosine_similarity > 0.85:  
+                        return self.curr_token, sorted_lemmas 
+                    
 
-            # If token is NOT already a lemma, return the highest-ranked lemma
-            sorted_lemmas = potential_lemmas.sort_values(by='Rank Scores', ascending=False)
-            best_lemma = sorted_lemmas.iloc[0]['WORDS']  # Get the highest-ranked lemma
-            print("Ranked Scored Lemmas:\n", sorted_lemmas)
-            return best_lemma
+                    else: 
+                        below_threshold = sorted_lemmas[sorted_lemmas['Cosine Similarity'] <= 0.85]
 
-        return self.morpheme
+                         # Update list to only include filtered lemmas
+                        if not below_threshold.empty:
+                            sorted_lemmas = below_threshold 
+
+                     
+                        return sorted_lemmas.iloc[0]['WORDS'], sorted_lemmas  
+
+                else:
+                    # If morpheme does not exist in potential lemmas, return highest-ranked lemma
+                    return sorted_lemmas.iloc[0]['WORDS'], sorted_lemmas
+
+            # If token is NOT already a lemma, return the full sorted list without filtering
+            return sorted_lemmas.iloc[0]['WORDS'], sorted_lemmas
+
+        return self.curr_token, potential_lemmas  # If empty, return original token and empty lemmas
 
     def annotate(self, inf_input, lemm_output):
+        if inf_input == lemm_output:
+            return
+
         if lemm_output in self.annotated_lemma:
             if inf_input not in self.annotated_lemma[lemm_output]:
                 self.annotated_lemma[lemm_output].append(inf_input)
@@ -462,11 +483,10 @@ class TagLemma:
     # Display potential lemmas basedon the chosen morpheme
     def show_potential_lemmas(self, lemmatizable_token):
         
-        print(self.list_of_lemmatizable_tokens)
         morpheme_index = self.list_of_lemmatizable_tokens.index(lemmatizable_token)
         
         morpheme = self.list_of_morphemes[morpheme_index]
-        print(morpheme)
+       
         return self.potential_lemmas[morpheme]
     
     # Display the process of the algorithm based on the highest lemma only, not the entire lemma output
@@ -663,10 +683,10 @@ class TagLemma:
                         fuzzy_potential_lemmas = self.fuzzy_matching(
                             temp_token, potential_lemmas)
                         
-                        self.store_lemma_ranking_in_dict(token, fuzzy_potential_lemmas)
-                        
-                        best_lemma = self.show_best_lemma(
+                        best_lemma = self.show_best_lemma(  
                             fuzzy_potential_lemmas)
+                        
+                        self.store_lemma_ranking_in_dict(token, fuzzy_potential_lemmas)
                         
                         self.create_source_to_target(token, best_lemma)
         
@@ -748,10 +768,10 @@ class TagLemma:
                         fuzzy_potential_lemmas = self.fuzzy_matching(
                             temp_token, potential_lemmas)
                         
-                        self.store_lemma_ranking_in_dict(token, fuzzy_potential_lemmas)
-                        
-                        best_lemma = self.show_best_lemma(
+                        best_lemma, temp_fp_lemmas = self.show_best_lemma(
                             fuzzy_potential_lemmas)
+                        
+                        self.store_lemma_ranking_in_dict(token, temp_fp_lemmas)
                             
                         self.create_source_to_target(token, best_lemma)
                         #self.show_cosine_similarity(token, best_lemma)
