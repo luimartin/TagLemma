@@ -36,7 +36,7 @@ class CustomButton(QPushButton):
         # Title add margin to space description
         self.title_label = QLabel(title)
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title_label.setStyleSheet("font-weight: bold; font-size: 20px;")
+        self.title_label.setStyleSheet("font-weight: bold; font-size: 28px;")
         self.title_label.setContentsMargins(0, 0, 0, 5)
         self.text_layout.addWidget(self.title_label)
 
@@ -44,7 +44,7 @@ class CustomButton(QPushButton):
         self.desc_label = QLabel(description)
         self.desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.desc_label.setWordWrap(True)
-        self.desc_label.setStyleSheet("color: gray; font-size: 15px;")
+        self.desc_label.setStyleSheet("color: gray; font-size: 18px;")
         self.text_layout.addWidget(self.desc_label)
 
         # Spacer below text

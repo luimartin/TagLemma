@@ -52,12 +52,15 @@ SUFFIX_SET = [
 PERIOD_FLAG = True
 PASS_FLAG = False
 
-def check_validation(token):
-	with open('dataset/tagalog_roots.txt', 'r') as valid:
-		data = valid.read().replace('\n', ' ').split(' ')
-		# data = set([line.strip('\n') for line in valid.readlines()])
+def load_dataset():
+    with open('dataset/tagalog_roots.txt', 'r', encoding='utf-8') as valid:
+        return set(valid.read().splitlines())  # Use a set for fast lookups
 
-	return True if token in data else False
+# Store the dataset in memory
+VALID_ROOTS = load_dataset()
+
+def check_validation(token):
+    return token in VALID_ROOTS  # O(1) lookup
 
 def check_vowel(letter):
     return letter in "aeiou"

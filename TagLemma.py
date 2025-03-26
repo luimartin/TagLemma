@@ -399,9 +399,9 @@ class TagLemma:
 
         # Ranks the Fuzzy Matched Lemmas
         potential_lemmas['Rank Scores'] = (
-            (.70 * potential_lemmas['Cosine Similarity']) +
+            (.75 * potential_lemmas['Cosine Similarity']) +
             #(.05 * potential_lemmas['Cosine Distance']) +
-            (.10 * potential_lemmas['LCS']) +
+            (.05 * potential_lemmas['LCS']) +
             (.20 * potential_lemmas['Levenshtein'])
         )
 
@@ -528,8 +528,7 @@ class TagLemma:
         output.append(f"Cosine Similarity = {dot_product:.2f} / ({magnitude1:.2f} x {magnitude2:.2f})")
         output.append(f"= {dot_product:.2f} / {magnitude1 * magnitude2:.2f}")
         output.append(f"= {similarity:.4f}\n")
-        output.append(f"The word '{source}' has a {(similarity * 100):.2f}% match for the '{target}' which is the lemma\n")
-        output.append(f"Note: A match is considered true when the similarity between the source word and the target lemma is 80% or higher.\n")
+        output.append(f"The word '{source}' is {(similarity * 100):.2f}% morphologically similar for the '{target}' which is the lemma\n")
         output.append("===================================\n")
   
         return "\n".join(output)
@@ -567,8 +566,7 @@ class TagLemma:
         result.append(f"Levenshtein Distance: {distance}")
         result.append(f"Max Length of Words: {max_len}")
         result.append(f"Similarity Score = 1 - ({distance} / {max_len}) = {similarity:.4f}\n")
-        result.append(f"The word '{source}' has a {(similarity * 100):.2f}% match for the '{target}' which is the lemma\n")
-        result.append(f"Note: A match is considered true when the similarity between the source word and the target lemma is 80% or higher.\n")
+        result.append(f"The word '{source}' is {(similarity * 100):.2f}% morphologically similar for the '{target}' which is the lemma\n")
         result.append("===================================\n")
         
         return "\n".join(result)

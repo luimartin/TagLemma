@@ -61,6 +61,59 @@ class LemmatizeThread(QThread):
                            exclude_invalid, annotation, source_to_target, self.lemma_obj)
 
 
+class CustomProgressDialog(QProgressDialog):
+    def __init__(self, label_text, cancel_button_text, minimum, maximum, parent=None):
+        super().__init__(label_text, cancel_button_text, minimum, maximum, parent)
+        self.setWindowTitle("Loading")
+        self.setWindowModality(Qt.WindowModality.WindowModal)
+        self.setCancelButtonText("")  # Ensure no cancel button text is shown
+        self.setCancelButton(None)  # Disable the cancel button
+        self.setStyleSheet("""
+            QProgressDialog {
+                background: #ecf6f9;
+            }
+            QLabel {
+                font-size: 20px;  /* Set font size for the label */
+            }
+            QProgressBar {
+                border: 2px solid grey;
+                border-radius: 5px;
+                text-align: center;
+            }
+            QProgressBar::chunk {
+                background-color: #1f6663;
+                width: 5px;
+            }
+        """)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint & ~Qt.WindowType.WindowMinMaxButtonsHint)
+        
+  
+        # Add a flag to track programmatic closing
+        self._programmatic_close = False
+
+    def closeEvent(self, event):
+        # Allow programmatic closing but prevent manual closing
+        print(f"Close event triggered. Programmatic close: {self._programmatic_close}")
+        if self._programmatic_close:
+            self._programmatic_close = False  # Reset the flag after closing
+            event.accept()  # Allow closing
+        else:
+            event.ignore() 
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            event.ignore()  # Ignore the Escape key
+        else:
+            super().keyPressEvent(event)
+
+    def close_programmatically(self):
+        # Set the flag and close the dialog
+        print("Closing programmatically...")
+        self._programmatic_close = True
+        self.close()
+
+
+
 class MainMenu(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
@@ -69,7 +122,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.design()
         self.t_thread = None
         self.taglemma = TagLemma.TagLemma()
-        self.headerWidget.setMinimumHeight(110)
+        self.headerWidget.setMinimumHeight(150)
 
         # set the size for the btns in landing page
         self.lemmaBtn.setSizePolicy(
@@ -154,17 +207,15 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             dialog.exec()
         else:
             self.message_dialog(QMessageBox.Icon.Warning,
-                                "No Fuzzy Matching Process to Display", "Warning")
+                                "No Fuzzy Matching Process to Display.", "Warning")
 
 
     def toggle_buttons(self):
         sender = self.sender()  # Get the button that was clicked asdasd
-        self.process_dropdown.clear()
-        self.process_dropdown.addItems(self.keys)
+        self.process_dropdown.show()
         if sender.isChecked():
             sender.setEnabled(False)
             
-            self.process_dropdown.show()
             if not self.keys:
                 self.process_dropdown.hide()
             if sender == self.potentialLemmaBtn:
@@ -180,6 +231,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 self.lemma_ranking(self.process_dropdown.currentIndex())
                 self.process_dropdown.currentIndexChanged.connect(
                     lambda: self.lemma_ranking(self.process_dropdown.currentIndex()))
+        else:
+            self.process_dropdown.hide()
 
 
     def potential_lemma(self, index):
@@ -188,8 +241,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 ", ".join(self.t_thread.lemma_obj.show_potential_lemmas(self.keys[index])))
             self.processText.setPlainText(f'Potential Lemmas:\n\n{text}')
         else:
-            self.processText.setPlainText("No potential lemmas to display.")
-
+            self.message_dialog(QMessageBox.Icon.Warning,
+                                "No potential lemmas to display.", "Warning")
 
     def lemma_ranking(self, index):
         if self.keys:
@@ -210,16 +263,36 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             )
             self.processText.setPlainText(f'Lemma Ranking:\n\n{formatted_data}')
         else:
-            self.processText.setPlainText("No lemma ranking to display.")
+            self.message_dialog(QMessageBox.Icon.Warning,
+                                "No lemma ranking to display.", "Warning")
     
-    
+    def get_tokenized(self):
+        self.potentialLemmaBtn.setEnabled(True)
+        self.lemmaRankingBtn.setEnabled(True)
+        self.process_dropdown.hide()
+        result_str = ", ".join(self.tokenized)
+        self.processText.setPlainText(f'Tokenization:\n\nTokens = [{result_str}]',)
+        self.processText
+
+    def display_morphemes(self):
+        self.potentialLemmaBtn.setEnabled(True)
+        self.lemmaRankingBtn.setEnabled(True)
+        self.process_dropdown.hide()
+        if self.morphemes:
+            result_str = "\n".join(self.morphemes)
+            self.processText.setPlainText(f'Morphemes:\n\n{result_str}')
+        else:
+            self.processText.setPlainText("No morphemes to display.")
+            self.message_dialog(QMessageBox.Icon.Warning,
+                                "No morphemes to display.", "Warning")
+
+
     # this set the behavior of the results using the combobox
     def combo_box_changed(self, i):
         if i == 0:
-            self.resultText.setPlainText(self.result)
+            self.resultText.setPlainText(self.valid_result)
         elif i == 1:
-            result_str = " ".join(self.exclude_invalid)
-            self.resultText.setPlainText(result_str)
+            self.resultText.setPlainText(self.result)
         else:
             result_str = " ".join(self.result_removed_sw)
             self.resultText.setPlainText(result_str)
@@ -228,7 +301,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     # sets the maximum char count for the input of words
     def max_char_count(self):
         text = self.inputText.toPlainText()
-        self.max = 50000
+        self.max = 10000
         if len(text) > self.max:
             cursor = self.inputText.textCursor()
             pos = cursor.position()
@@ -254,6 +327,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.disable_features(False)
         self.inputText.clear()
         self.process_dropdown.hide()
+        self.process_dropdown.clear()
         self.resultText.clear()
         self.comboBox.hide()
         print("Cleared")
@@ -288,19 +362,14 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                                 "Input cannot contain only stopwords. Enter valid text.", "Warning")
             return
 
-        self.resultText.setPlainText("Please Wait, Currently Lemmatizing.....")
+        #self.resultText.setPlainText("Please Wait, Currently Lemmatizing.....")
         self.comboBox.setCurrentIndex(0)
-        """
-        self.progressDialog = QProgressDialog(
-            "Lemmatizing...", "Cancel", 0, 0, self)
-        # self.progressDialog.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        # self.progressDialog.setWindowFlags(Qt.WindowType.FramelessWindowHint)
-        self.progressDialog.setWindowTitle("Loading")
-        self.progressDialog.setWindowModality(Qt.WindowModality.WindowModal)
-        self.progressDialog.setCancelButton(None)
+        
+        self.progressDialog = CustomProgressDialog(
+            "Please Wait, Currently Lemmatizing.....", "", 0, 0, self
+        )
         self.progressDialog.show()
-        """
-
+        
         # Starts the lemmatization sa ibang thread
         self.t_thread = LemmatizeThread(text)
         self.thread = self.t_thread
@@ -312,7 +381,19 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     # update UI from another threadsasdasd
     def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens,
                                   tokenized, morphemes, result_removed_sw, exclude_invalid, annotation, source_to_target):
+        
+        
+        self.validText.setPlainText("")
+        self.processText.setPlainText("")
+        self.annotationTable.setPlainText("")
+        self.process_dropdown.hide()
+        self.potentialLemmaBtn.setChecked(False)
+        self.lemmaRankingBtn.setChecked(False)
+        self.potentialLemmaBtn.setEnabled(True)
+        self.lemmaRankingBtn.setEnabled(True)
+        
         # Updates the UI with the lemmatized text and other shits after processing
+        self.progressDialog.close_programmatically()
         self.valid_tokens = valid_tokens
         self.lemmas = lemmas
         self.invalid_tokens = invalid_tokens
@@ -322,21 +403,19 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.result_removed_sw = result_removed_sw
         self.exclude_invalid = exclude_invalid
         self.annotation = annotation
-        self.resultText.setPlainText(self.result)
         self.source_to_target = source_to_target
         self.thread = None
         self.comboBox.setEnabled(True)
         self.disable_features(True)
         self.comboBox.show()
-        self.keys = list(self.source_to_target.keys())
-        # self.progressDialog.close()
 
-        self.validText.setPlainText("")
-        self.processText.setPlainText("")
-        self.annotationTable.setPlainText("")
-        self.process_dropdown.hide()
-        self.potentialLemmaBtn.setEnabled(True)
-        self.lemmaRankingBtn.setEnabled(True)
+        self.keys = list(self.source_to_target.keys())
+        self.process_dropdown.addItems(self.keys)
+        
+
+        self.valid_result = " ".join(self.exclude_invalid)
+        self.resultText.setPlainText(self.valid_result)
+    
 
         if annotation:
             temp = json.dumps(annotation, indent=6)
@@ -367,13 +446,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
         self.validText.setPlainText(f'Invalid Tokens: \n\n{result_str}')
 
-
-    # Exclude invalid words on result & Exclude stop words on result
-    def lemma(self):
-
-        print(self.lemmas)
-        result_str = " ".join(self.lemmas)
-        self.resultText.setPlainText(result_str)
 
     def pdf(self):
         if not self.resultText.toPlainText():
@@ -406,12 +478,13 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 self.message_dialog(QMessageBox.Icon.Warning,
                                     f"Error saving file: {e}", "Warning")
 
+
     # qmessagedialog for DRY blahvlahblah...
     def message_dialog(self, icon, message, title):
         msgBox = QMessageBox()
         msgBox.setStyleSheet("""
             background: #ecf6f9;
-            font-size: 16px;
+            font-size: 20px;
         """)
         msgBox.setIcon(icon)
         msgBox.setText(message)
@@ -423,33 +496,15 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     # function to see changes in the mfing textedits 
     def update_input_label(self):
         x = len(self.inputText.toPlainText())
-        self.inputLabelChar.setText(f"Character Count: {x}")
+        self.inputLabelChar.setText(f" Input Character Count: {x}")
+
 
     def update_result_label(self):
         x = len(self.resultText.toPlainText())
-        self.resultLabelChar.setText(f"Character Count: {x}")
-
-    def get_tokenized(self):
-        self.potentialLemmaBtn.setEnabled(True)
-        self.lemmaRankingBtn.setEnabled(True)
-        self.process_dropdown.hide()
-        result_str = ", ".join(self.tokenized)
-        self.processText.setPlainText(f'Tokenization:\n\nTokens = [{result_str}]',)
-        self.processText
-
-    def display_morphemes(self):
-        self.potentialLemmaBtn.setEnabled(True)
-        self.lemmaRankingBtn.setEnabled(True)
-        self.process_dropdown.hide()
-        if self.morphemes:
-            result_str = "\n".join(self.morphemes)
-            self.processText.setPlainText(f'Morphemes:\n\n{result_str}')
-        else:
-            self.processText.setPlainText("No morphemes to display.")
+        self.resultLabelChar.setText(f" Output Character Count: {x}")
 
 
 # TODO: parse file to be refactored....
-
     def load_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Open File", "", "PDF Files (*.pdf);;Word Files (*.docx);; Text Files (*.txt)")
@@ -519,20 +574,21 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         _translate = QCoreApplication.translate
         # ======================================================================
         self.setWindowTitle("Tagalog Lemmatizer Algorithm")
-        self.setWindowIcon(QIcon("assets/logo_pdf.png"))
-
+        self.setWindowIcon(QIcon("assets/12.png"))
+        self.setMinimumSize(1280 , 720)
         # labels for character count in text edits
         self.inputLabelChar = QLabel(parent=self.lemmaPage)
         self.inputLabelChar.setObjectName("inputLabelChar")
-        self.inputLabelChar.setText("Character Count: 0")
-        self.inputLabelChar.setStyleSheet("font-size: 15px;")
+        self.inputLabelChar.setText(" Input Character Count: 0")
+        #self.inputLabelChar.setStyleSheet("font-size: 15px;")
         self.verticalLayout.addWidget(self.inputLabelChar)
+        self.verticalLayout.setSpacing(3)
         self.resultLabelChar = QLabel(parent=self.lemmaPage)
         self.resultLabelChar.setObjectName("resultLabelChar")
-        self.resultLabelChar.setText("Character Count: 0")
-        self.resultLabelChar.setStyleSheet("font-size: 15px;")
+        self.resultLabelChar.setText(" Output Character Count: 0")
+        #self.resultLabelChar.setStyleSheet("font-size: 15px;")
         self.verticalLayout_2.addWidget(self.resultLabelChar)
-
+        self.verticalLayout_2.setSpacing(3) 
         # lemmaPage
 
         processIcon = f'<img src="assets/process.png" width="20" height="20">'
@@ -570,6 +626,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 border-bottom: 1px ridge white;
                 border-top: none;
                 border-left: none;
+                font-family: "Poppins";
                 border-radius: 5px;
             """)
         self.titleLogo.setStyleSheet("""
@@ -579,8 +636,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             """)
         self.titleLabel.setStyleSheet("""
                 color: #ffffff;  
-                font-size: 30px;
-                font-family: "Consolas";
+                font-size: 35px;
+                
                 font-weight: bold;
                 border-left: none;
                 border-right: none;  
@@ -590,8 +647,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.featureBtn.setStyleSheet("""
                 QPushButton {
                     color: white;
-                    font-family: "Consolas"; 
-                    font-size: 20px;
+                    
+                    font-size: 35px;
                     border-radius: 2px;
                     border: 2px solid rgba(0, 0, 0, 0);
                 } 
@@ -599,18 +656,21 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     background-color: #8bdcd8;  
                 }                      
             """)
+        
+        
         self.stackedWidget.setStyleSheet("""  
                 QLabel{
                     background: rgb(0,0,0,0);
                     font-family: "Consolas"; 
-                    font-size: 20px;
+                    font-size: 23px;
                     font-weight: bold;
                     color: black; 
-                }       
+                }
                 QPushButton {
                     background: #FAF9F6;
                     font-weight: bold;
                     font-family: "Segoe UI";
+                    font-size: 18px;
                     border-top: none;
                     border-bottom: 2px solid black; 
                     border-left: none;
@@ -626,7 +686,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     background: #ffffff;
                     border: 2px solid black;
                     border-radius: 5px;
-                    font-size: 16px;
+                    font-size: 18px;
                     font-family: "Consolas";  
                     padding-left: 10px;
                 }
@@ -636,7 +696,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     border: 2px solid black;
                     padding: 5px;
                     font-family: "Consolas";
-                    font-size: 14px;
+                    font-size: 18px;
                 }
                 
                 QComboBox QAbstractItemView {
@@ -651,6 +711,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     color: white;
                 }         
             """)
+
 
         self.featurePage.setStyleSheet(("""
                 QPushButton {
@@ -669,6 +730,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     background: #ececec;
                 }  
             """))
+
 
         self.annotationPage.setStyleSheet(("""
                 QTableWidget {
@@ -692,8 +754,9 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 }
             """))
 
+
         self.featureBtn.setIcon(QIcon("assets/feature-icon.png"))
-        self.featureBtn.setIconSize(self.featureBtn.size())
+        self.featureBtn.setIconSize(QSize(50,50))
         self.featureBtn.setLayoutDirection(
             QtCore.Qt.LayoutDirection.LeftToRight)
         self.featureBtn.setCursor(QtGui.QCursor(

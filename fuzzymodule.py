@@ -64,14 +64,25 @@ class Dialog(QDialog):
         self.label_3.setText(PyQt6.QtCore.QCoreApplication.translate("Dialog", f'{self.label_3Icon} Lemmatizable Token/s'))
         self.label_3.setStyleSheet("font-size: 14px;")
 
+        self.label.setStyleSheet("""
+            color: white;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            background: #1f6663;
+            border: 1px ridge white;
+            border-radius: 5px;
+            font-size: 30px;
+
+        """)
         self.output.setStyleSheet("""
         QTextEdit {
             background: #ffffff;
             border: 2px solid black;
             border-radius: 5px;
-            font-size: 15px;
+            font-size: 18px;
             font-family: "Consolas";  
-        }             
+        }       
+  
         QScrollBar:vertical {
             border: none;
             background: #ecf6f9;
@@ -86,75 +97,50 @@ class Dialog(QDialog):
         } 
         """)
         self.setStyleSheet("""
-        background: #ecf6f9; 
-        """)
         
-        self.label.setStyleSheet("""
+        QWidget{
+            background: #ecf6f9;} 
+
+        QComboBox {
+            background: white;
+            color: black;
+            border: 2px solid black;
+            padding: 5px;
+            font-family: "Consolas";
+            font-size: 18px;
+        }
+                           
+        QLabel {
+            background: rgb(0,0,0,0);
+            font-family: "Consolas"; 
+            font-size: 23px;
+            font-weight: bold;
+            color: black; 
+        }
+                               
+        QComboBox QAbstractItemView {
+            border: 2px solid black;
+            selection-background-color: white; 
+            selection-color: black; 
+            outline: none;
+        }
+        
+        QComboBox QAbstractItemView::item:selected {
+            background: #1f6663;  
             color: white;
-            padding-top: 10px;
-            padding-bottom: 10px;
-            background: #1f6663;
-            border: 1px ridge white;
-            border-radius: 5px;
-        """)
-           
-        self.lemmatizable.setStyleSheet("""
-            QComboBox {
-                background: white;
-                color: black;
-                border: 2px solid black;
-                padding: 5px;
-                font-family: "Segoe UI";
-                font-size: 14px;
-            }
-            
-            QComboBox QAbstractItemView {
-                border: 2px solid black;
-                selection-background-color: white; 
-                selection-color: black; 
-                outline: none;
-            }
-            
-            QComboBox QAbstractItemView::item:selected {
-                background: #1f6663;  
-                color: white;
-            }
-            
-            QScrollBar:vertical {
-                border: none;
-                background: #ecf6f9;
-                width: 6px;  /* Makes the vertical scrollbar slimmer */
-                margin: 0px;
-            }
-
-            QScrollBar::handle:vertical {
-                background: #1f6663;
-                min-height: 20px;
-                border-radius: 3px;  /* Keeps it rounded for a modern look */
-            }
-        """)
+        }
         
-        self.algo.setStyleSheet("""
-            QComboBox {
-                background: white;
-                color: black;
-                border: 2px solid black;
-                padding: 5px;
-                font-family: "Segoe UI";
-                font-size: 14px;
-            }
-            
-            QComboBox QAbstractItemView {
-                border: 2px solid black;
-                selection-background-color: white; 
-                selection-color: black; 
-                outline: none;
-            }
-            
-            QComboBox QAbstractItemView::item:selected {
-                background: #1f6663;  
-                color: white;
-            }
-        """)
+        QScrollBar:vertical {
+            border: none;
+            background: #ecf6f9;
+            width: 6px;  /* Makes the vertical scrollbar slimmer */
+            margin: 0px;
+        }
 
+        QScrollBar::handle:vertical {
+            background: #1f6663;
+            min-height: 20px;
+            border-radius: 3px;  /* Keeps it rounded for a modern look */
+        }                
+        """)
         

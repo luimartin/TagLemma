@@ -6,6 +6,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1280 , 720 )
+        
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout_main = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -60,7 +61,7 @@ class Ui_MainWindow(object):
         self.lemmaPage.setObjectName("lemmaPage")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.lemmaPage)
         self.verticalLayout_3.setContentsMargins(30, 30, 30, 30)
-        self.verticalLayout_3.setSpacing(14)
+        self.verticalLayout_3.setSpacing(20)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setSpacing(25)
@@ -102,10 +103,10 @@ class Ui_MainWindow(object):
         self.clearBtn = QtWidgets.QPushButton(parent=self.lemmaPage)
         self.clearBtn.setObjectName("clearBtn")
         
+        self.horizontalLayout_2.addWidget(self.importBtn)
+        self.horizontalLayout_2.addWidget(self.lemmatizeBtn)
         self.horizontalLayout_2.addItem(spacerItem)
         self.horizontalLayout_2.addWidget(self.comboBox)
-        self.horizontalLayout_2.addWidget(self.lemmatizeBtn)
-        self.horizontalLayout_2.addWidget(self.importBtn)
         self.horizontalLayout_2.addWidget(self.clearBtn)
         self.horizontalLayout_2.addWidget(self.exportBtn)
 
@@ -203,12 +204,12 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.inputLabel.setText(_translate("MainWindow", "Input Tagalog Text"))
-        self.resulLabel.setText(_translate("MainWindow", "Result"))
+        self.resulLabel.setText(_translate("MainWindow", "Results"))
         self.importBtn.setText(_translate("MainWindow", "Import"))
         self.exportBtn.setText(_translate("MainWindow", "Export"))
         self.comboBox.setItemText(0, _translate("MainWindow", "Default"))
-        self.comboBox.setItemText(1, _translate("MainWindow", "Exclude invalid words on result"))
-        self.comboBox.setItemText(2, _translate("MainWindow", "Exclude stop words on result"))
+        self.comboBox.setItemText(1, _translate("MainWindow", "Show invalid words on result"))
+        self.comboBox.setItemText(2, _translate("MainWindow", "Show stop words on result"))
         self.lemmatizeBtn.setText(_translate("MainWindow", "Lemmatize"))
         self.clearBtn.setText(_translate("MainWindow", "Clear"))
         self.label.setText(_translate("MainWindow", "Validation"))
