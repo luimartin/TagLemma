@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy,
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QCoreApplication, QSize
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6 import QtGui, QtCore
+from datetime import datetime
 import sys
 import pdf
 import TagLemma
@@ -334,6 +335,10 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
 
     def lemmatize(self):
+        # Default clearing of Memory 
+        self.process_dropdown.hide()    
+        self.process_dropdown.clear()    
+
         text = self.inputText.toPlainText()
         count = len(self.inputText.toPlainText())
 
@@ -414,8 +419,11 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         
 
         self.valid_result = " ".join(self.exclude_invalid)
-        self.resultText.setPlainText(self.valid_result)
-    
+        
+        if not self.exclude_invalid: 
+            self.resultText.setPlainText("No Valid Text to Lemmatize.")
+        else:
+            self.resultText.setPlainText(self.valid_result)
 
         if annotation:
             temp = json.dumps(annotation, indent=6)
@@ -535,11 +543,14 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         with open(file_path, "r", encoding="utf-8") as file:
             text = file.read()
         return text
-
+    
     def save_json(self):
         # Open a file dialog to choose save location
+        today_date = datetime.now().strftime("%Y-%m-%d")
+        default_file_name = "TALA_" + today_date + "_Tagalog_InflectionToLemma_Annotation"
+        
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save JSON File", "", "JSON Files (*.json);;All Files (*)")
+            self, "Save JSON File", default_file_name, "JSON Files (*.json);;All Files (*)")
 
         if file_path:  # Check if the user selected a file
             try:
