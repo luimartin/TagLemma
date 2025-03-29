@@ -24,7 +24,7 @@ class Dialog(QDialog):
         self.output.setTabStopDistance(tab_width)
         self.lemmatizable.addItems(self.keys_list)
 
-        self.algo.addItems(["Cosine Similarity", "Levenshtein Distance"])
+        self.algo.addItems(["Cosine Similarity", "Levenshtein Distance", "Longest Common Substring"])
         self.lemmatizable.currentIndexChanged.connect(self.fuzzy_match)
         self.algo.currentTextChanged.connect(
             lambda: self.fuzzy_match(self.lemmatizable.currentIndex()))
@@ -38,9 +38,14 @@ class Dialog(QDialog):
             self.output.setText(self.t.show_cosine_similarity(
                 self.keys_list[index], self.values_list[index]))
             self.center_text()
-        else:
+        elif self.algo.currentText() == "Levenshtein Distance":
             print(index)
             self.output.setText(self.t.show_lev_distance(
+                self.keys_list[index], self.values_list[index]))
+            self.center_text()
+        else:
+            print(index)
+            self.output.setText(self.t.show_lcs(
                 self.keys_list[index], self.values_list[index]))
             self.center_text()
 
