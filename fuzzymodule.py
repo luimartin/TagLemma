@@ -56,12 +56,12 @@ class Dialog(QDialog):
 
     def design(self):
         self.label_2Icon = f'<img src = "assets/algorithm.png" width = "20" height = "18">'
-        self.label_2.setText(PyQt6.QtCore.QCoreApplication.translate("Dialog", f'{self.label_2Icon} Algorithm'))
+        self.label_2.setText(PyQt6.QtCore.QCoreApplication.translate("Dialog", f'{self.label_2Icon} Select Algorithm:'))
         self.label_2.setStyleSheet("font-size: 14px;")
         
         
         self.label_3Icon = f'<img src = "assets/approve.png" width = "20" height = "18">'
-        self.label_3.setText(PyQt6.QtCore.QCoreApplication.translate("Dialog", f'{self.label_3Icon} Lemmatizable Token/s'))
+        self.label_3.setText(PyQt6.QtCore.QCoreApplication.translate("Dialog", f'{self.label_3Icon} Select Lemmatizable Token:'))
         self.label_3.setStyleSheet("font-size: 14px;")
 
         self.label.setStyleSheet("""

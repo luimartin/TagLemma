@@ -176,7 +176,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.morphemeBtn.clicked.connect(self.display_morphemes)
         # This create the combobox with out editing the whole code.....
         self.processText.setReadOnly(True)
-        self.process_dropdown.hide()
+        self.processDropdown.hide()
+        self.processDropdownLabel.hide()
         self.potentialLemmaBtn.setCheckable(True)
         self.lemmaRankingBtn.setCheckable(True)
         self.potentialLemmaBtn.clicked.connect(self.toggle_buttons)
@@ -199,7 +200,10 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.export_annotation.clicked.connect(self.save_json)
 
     def fuzzy_dialog(self):
-        self.process_dropdown.hide()
+        self.processDropdown.hide()
+        self.processDropdownLabel.hide()
+        self.reset_toggle_buttons()
+        self.processText.clear()
         if self.source_to_target:
             dialog = Dialog(self.t_thread.lemma_obj, self)
             # Make the dialog modal
@@ -212,28 +216,40 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     def toggle_buttons(self):
         sender = self.sender()  # Get the button that was clicked asdasd
-        self.process_dropdown.show()
+         # Reset the state of both buttons before toggling
+
+        self.processText.setPlainText("")
+        self.processDropdown.show()
+        self.processDropdownLabel.show()
+        
         if sender.isChecked():
             sender.setEnabled(False)
             
             if not self.keys:
-                self.process_dropdown.hide()
+                self.processDropdown.hide()
+                self.processDropdownLabel.hide()
             if sender == self.potentialLemmaBtn:
                 self.lemmaRankingBtn.setChecked(False)
                 self.lemmaRankingBtn.setEnabled(True)
                 self.potential_lemma(
-                    self.process_dropdown.currentIndex())
-                self.process_dropdown.currentIndexChanged.connect(
-                    lambda: self.potential_lemma(self.process_dropdown.currentIndex()))
-            else:
+                    self.processDropdown.currentIndex())
+                self.processDropdown.currentIndexChanged.connect(
+                    lambda: self.potential_lemma(self.processDropdown.currentIndex()))
+            elif sender == self.lemmaRankingBtn:
                 self.potentialLemmaBtn.setChecked(False)
                 self.potentialLemmaBtn.setEnabled(True)
-                self.lemma_ranking(self.process_dropdown.currentIndex())
-                self.process_dropdown.currentIndexChanged.connect(
-                    lambda: self.lemma_ranking(self.process_dropdown.currentIndex()))
+                self.lemma_ranking(self.processDropdown.currentIndex())
+                self.processDropdown.currentIndexChanged.connect(
+                    lambda: self.lemma_ranking(self.processDropdown.currentIndex()))
         else:
-            self.process_dropdown.hide()
+            self.processDropdown.hide()
+            self.processDropdownLabel.hide()
 
+    def reset_toggle_buttons(self):
+        self.potentialLemmaBtn.setEnabled(True)
+        self.lemmaRankingBtn.setEnabled(True)
+        self.potentialLemmaBtn.setChecked(False)
+        self.lemmaRankingBtn.setChecked(False)
 
     def potential_lemma(self, index):
         if self.keys:
@@ -267,17 +283,17 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                                 "No lemma ranking to display.", "Warning")
     
     def get_tokenized(self):
-        self.potentialLemmaBtn.setEnabled(True)
-        self.lemmaRankingBtn.setEnabled(True)
-        self.process_dropdown.hide()
+        self.reset_toggle_buttons()
+        self.processDropdown.hide()
+        self.processDropdownLabel.hide()
         result_str = ", ".join(self.tokenized)
         self.processText.setPlainText(f'Tokenization:\n\nTokens = [{result_str}]',)
         self.processText
 
     def display_morphemes(self):
-        self.potentialLemmaBtn.setEnabled(True)
-        self.lemmaRankingBtn.setEnabled(True)
-        self.process_dropdown.hide()
+        self.reset_toggle_buttons()
+        self.processDropdown.hide()
+        self.processDropdownLabel.hide()
         if self.morphemes:
             result_str = "\n".join(self.morphemes)
             self.processText.setPlainText(f'Morphemes:\n\n{result_str}')
@@ -290,7 +306,12 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     # this set the behavior of the results using the combobox
     def combo_box_changed(self, i):
         if i == 0:
-            self.resultText.setPlainText(self.valid_result)
+            if not self.valid_result:
+                self.resultText.setPlainText("No Valid Text to Lemmatize.")
+                return
+            self.resultText.setPlainText(self.valid_result) 
+            
+
         elif i == 1:
             self.resultText.setPlainText(self.result)
         else:
@@ -326,8 +347,9 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.comboBox.setEnabled(False)
         self.disable_features(False)
         self.inputText.clear()
-        self.process_dropdown.hide()
-        self.process_dropdown.clear()
+        self.processDropdown.hide()
+        self.processDropdownLabel.hide()
+        self.processDropdown.clear()
         self.resultText.clear()
         self.comboBox.hide()
         print("Cleared")
@@ -370,27 +392,29 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         )
         self.progressDialog.show()
         
+        self.reset_toggle_buttons()
+        
+        self.validText.setPlainText("")
+        self.processText.setPlainText("")
+        self.annotationTable.setPlainText("")
+        self.processDropdown.hide()
+        self.processDropdownLabel.hide()
+        self.processDropdown.clear()
+
         # Starts the lemmatization sa ibang thread
         self.t_thread = LemmatizeThread(text)
         self.thread = self.t_thread
         # Connects signal to UI update
         self.thread.finished.connect(self.on_lemmatization_complete)
         self.thread.start()
+        
 
 
     # update UI from another threadsasdasd
     def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens,
                                   tokenized, morphemes, result_removed_sw, exclude_invalid, annotation, source_to_target):
         
-        
-        self.validText.setPlainText("")
         self.processText.setPlainText("")
-        self.annotationTable.setPlainText("")
-        self.process_dropdown.hide()
-        self.potentialLemmaBtn.setChecked(False)
-        self.lemmaRankingBtn.setChecked(False)
-        self.potentialLemmaBtn.setEnabled(True)
-        self.lemmaRankingBtn.setEnabled(True)
         
         # Updates the UI with the lemmatized text and other shits after processing
         self.progressDialog.close_programmatically()
@@ -410,11 +434,12 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.comboBox.show()
 
         self.keys = list(self.source_to_target.keys())
-        self.process_dropdown.addItems(self.keys)
-        
-
-        self.valid_result = " ".join(self.exclude_invalid)
-        self.resultText.setPlainText(self.valid_result)
+        self.processDropdown.addItems(self.keys)
+        self.valid_result = " ".join(self.lemmas)
+        if self.lemmas: 
+            self.resultText.setPlainText(self.valid_result)
+        else: 
+            self.resultText.setPlainText("No Valid Text to Lemmatize.")
     
 
         if annotation:
@@ -573,7 +598,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     def design(self):
         _translate = QCoreApplication.translate
         # ======================================================================
-        self.setWindowTitle("Tagalog Lemmatizer Algorithm")
+        self.setWindowTitle("Tagalog Lemmatization Algorithm")
         self.setWindowIcon(QIcon("assets/12.png"))
         self.setMinimumSize(1280 , 720)
         # labels for character count in text edits
@@ -592,6 +617,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         # lemmaPage
 
         processIcon = f'<img src="assets/process.png" width="20" height="20">'
+        selectLemmaIcon = f'<img src="assets/approve.png" width="20" height="20">'
         self.label_2 = QLabel(parent=self.processPage)
         self.label_2.setObjectName("label_2")
         self.label_2.setText("Process")
@@ -605,10 +631,15 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.horizontalSpacer_4 = QSpacerItem(
             40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.horizontalLayout_7.addItem(self.horizontalSpacer_4)
-        self.process_dropdown = QComboBox(parent=self.processPage)
-        self.process_dropdown.setObjectName(u"process_dropdown")
-        self.process_dropdown.setMinimumWidth(150)
-        self.horizontalLayout_7.addWidget(self.process_dropdown)
+        self.processDropdownLabel = QLabel(parent=self.processPage)
+        self.processDropdownLabel.setObjectName("processDropdownLabel")
+        self.processDropdownLabel.setText(_translate(
+            "MainWindow", f'{selectLemmaIcon} Select Lemmatizable Token:'))
+        self.horizontalLayout_7.addWidget(self.processDropdownLabel)
+        self.processDropdown = QComboBox(parent=self.processPage)
+        self.processDropdown.setObjectName(u"processDropdown")
+        self.processDropdown.setMinimumWidth(150)
+        self.horizontalLayout_7.addWidget(self.processDropdown)
         self.verticalLayout_7.insertLayout(0, self.horizontalLayout_7)
 
         pixmap = QPixmap("assets/11.png")
@@ -860,6 +891,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.lemmaRankingBtn.setCursor(QtGui.QCursor(
             QtCore.Qt.CursorShape.PointingHandCursor))
 
+        self.importBtn.setToolTip("import button")
         # ======================================================================0
 
 
