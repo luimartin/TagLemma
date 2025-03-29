@@ -151,6 +151,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         # lemmaPage button connectors
         self.clearBtn.clicked.connect(self.clear)
         self.comboBox.hide()
+        self.comboBoxLabel.hide()
+        
         self.resultText.setReadOnly(True)
         self.inputText.setPlaceholderText(
             "Enter a Tagalog word, phrase, or sentence...")
@@ -313,12 +315,9 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 return
             self.resultText.setPlainText(self.valid_result) 
             
-
         elif i == 1:
             self.resultText.setPlainText(self.result)
-        else:
-            result_str = " ".join(self.result_removed_sw)
-            self.resultText.setPlainText(result_str)
+
 
 
     # sets the maximum char count for the input of words
@@ -354,6 +353,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.processDropdown.clear()
         self.resultText.clear()
         self.comboBox.hide()
+        self.comboBoxLabel.hide()
+        
         print("Cleared")
 
 
@@ -434,6 +435,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.comboBox.setEnabled(True)
         self.disable_features(True)
         self.comboBox.show()
+        self.comboBoxLabel.show()
+        
 
         self.keys = list(self.source_to_target.keys())
         self.processDropdown.addItems(self.keys)
@@ -610,23 +613,20 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.inputLabelChar = QLabel(parent=self.lemmaPage)
         self.inputLabelChar.setObjectName("inputLabelChar")
         self.inputLabelChar.setText(" Input Character Count: 0")
-        #self.inputLabelChar.setStyleSheet("font-size: 15px;")
         self.verticalLayout.addWidget(self.inputLabelChar)
         self.verticalLayout.setSpacing(3)
         self.resultLabelChar = QLabel(parent=self.lemmaPage)
         self.resultLabelChar.setObjectName("resultLabelChar")
         self.resultLabelChar.setText(" Output Character Count: 0")
-        #self.resultLabelChar.setStyleSheet("font-size: 15px;")
         self.verticalLayout_2.addWidget(self.resultLabelChar)
-        self.verticalLayout_2.setSpacing(3) 
+        self.verticalLayout_2.setSpacing(3)
+        self.comboBoxLabel.setText("Select Output Type:")
         # lemmaPage
-
         processIcon = f'<img src="assets/process.png" width="20" height="20">'
         selectLemmaIcon = f'<img src="assets/approve.png" width="20" height="20">'
         self.label_2 = QLabel(parent=self.processPage)
         self.label_2.setObjectName("label_2")
         self.label_2.setText("Process")
-
         self.label_2.setText(_translate(
             "MainWindow", f'{processIcon} Process'))
         self.horizontalLayout_8 = QHBoxLayout()
@@ -653,6 +653,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.titleLogo.setPixmap(logo)
         self.titleLabel.setText("TA.L.A. (Tagalog Lemmatization Algorithm)")
         self.horizontalLayout_3.setSpacing(0)
+        
+        
         self.centralwidget.setStyleSheet("""
                 background: #ecf6f9;
             """)
