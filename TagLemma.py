@@ -390,19 +390,19 @@ class TagLemma:
             lambda x: self.cosine_similarity(token, x))
         #potential_lemmas['Cosine Distance'] = potential_lemmas['WORDS'].apply(
             #lambda x: self.cosine_distance_percentage(token, x))
-        potential_lemmas['LCS'] = potential_lemmas['WORDS'].apply(
+        potential_lemmas['Levenshtein Distance'] = potential_lemmas['WORDS'].apply(
+            lambda x: self.levenshtein_distance(token, x))
+        potential_lemmas['Longest Common Substring'] = potential_lemmas['WORDS'].apply(
             lambda x: self.longestCommonSubstr(token, x))
         #potential_lemmas['Jaccard'] = potential_lemmas['WORDS'].apply(
             #lambda x: self.jaccardIndex(token, x))
-        potential_lemmas['Levenshtein'] = potential_lemmas['WORDS'].apply(
-            lambda x: self.levenshtein_distance(token, x))
+  
 
         # Ranks the Fuzzy Matched Lemmas
         potential_lemmas['Rank Scores'] = (
             (.75 * potential_lemmas['Cosine Similarity']) +
-            #(.05 * potential_lemmas['Cosine Distance']) +
-            (.05 * potential_lemmas['LCS']) +
-            (.20 * potential_lemmas['Levenshtein'])
+            (.20 * potential_lemmas['Levenshtein Distance']) +
+            (.05 * potential_lemmas['Longest Common Substring']) 
         )
 
         threshold_potential_lemmas = potential_lemmas[
@@ -463,10 +463,26 @@ class TagLemma:
         return self.annotated_lemma
 
     def show_inflection_and_morpheme(self):
-        return [f"{self.list_of_lemmatizable_tokens[i]} -> {self.list_of_morphemes[i]}" for i in range(len(self.list_of_lemmatizable_tokens))]
+        temp = []
+        seen_tokens = set()  # To track already processed tokens
+
+        for i in range(len(self.list_of_lemmatizable_tokens)):
+            current_token = self.list_of_lemmatizable_tokens[i]
+            
+            # Skip if we've already processed this token
+            if current_token in seen_tokens:
+                continue
+                
+            # Add to seen_tokens and process
+            seen_tokens.add(current_token)
+            inf_and_morph_string = f"{current_token} -> {self.list_of_morphemes[i]}"
+            temp.append(inf_and_morph_string)
+
+        return temp
     
     # Creating of morpheme : potential lemmas key value pair
     def create_morpheme_to_potential_lemmas(self, morpheme, potential_lemmas):
+
         # Ensure potential_lemmas is a DataFrame
         if isinstance(potential_lemmas, pd.DataFrame):
             # Turn Potential Lemmas---which is a DataFrame type---Into an Array 
@@ -482,7 +498,7 @@ class TagLemma:
 
     # Display potential lemmas basedon the chosen morpheme
     def show_potential_lemmas(self, lemmatizable_token):
-        
+
         morpheme_index = self.list_of_lemmatizable_tokens.index(lemmatizable_token)
         
         morpheme = self.list_of_morphemes[morpheme_index]
@@ -570,6 +586,47 @@ class TagLemma:
         result.append("===================================\n")
         
         return "\n".join(result)
+    
+    def show_lcs(self, source, target):
+        m, n = len(source), len(target)
+        prev = np.zeros(n + 1, dtype=int)
+        
+        result = []
+        result.append("\n==== Longest Common Substring Process ====\n")
+        result.append(f"Source: {source}")
+        result.append(f"Target: {target}\n")
+        
+        result.append("Step 1: Initialize DP Table")
+        max_len = max(m, n)
+        res = 0  # Store max LCS length
+        lcs_matrix = np.zeros((m + 1, n + 1), dtype=int)
+        
+        result.append("\nStep 2: Compute LCS Table\n")
+        for i in range(1, m + 1):
+            curr = np.zeros(n + 1, dtype=int)
+            for j in range(1, n + 1):
+                if source[i - 1] == target[j - 1]:
+                    curr[j] = prev[j - 1] + 1
+                    res = max(res, curr[j])
+                else:
+                    curr[j] = 0
+                lcs_matrix[i][j] = curr[j]
+            prev = curr
+        
+        # Display the LCS DP table
+        result.append(self.print_matrix(lcs_matrix, source, target))
+        
+        # Normalize
+        normalized_res = (res / max_len) if max_len > 0 else 1
+        
+        result.append("\nStep 3: Compute Similarity Score\n")
+        result.append(f"Longest Common Substring Length: {res}")
+        result.append(f"Max Length of Words: {max_len}")
+        result.append(f"Similarity Score = ({res} / {max_len}) = {normalized_res:.4f}\n")
+        result.append(f"The word '{source}' is {(normalized_res * 100):.2f}% morphologically similar for the '{target}' which is the lemma\n")
+        result.append("===================================\n")
+        
+        return "\n".join(result)    
 
     def print_matrix(self, matrix, source, target):
         source = " " + source
@@ -721,6 +778,7 @@ class TagLemma:
         #self.lemmatized_text = []
 
     def lemmatize_no_print(self, input_text):
+
         # Tokenized, Removed Stop Words and Validate the Input Text
         self.input = input_text
         self.tokenized = self.tokenize_input_text(input_text.lower())
@@ -754,7 +812,7 @@ class TagLemma:
                         if potential_lemmas.empty:
                             best_lemma = token
 
-                         # Storing morphem : potential lemmas key value pair
+                         # Storing morpheme : potential lemmas key value pair
                         self.create_morpheme_to_potential_lemmas(morpheme, potential_lemmas)
 
                         # Secret Move: If Letter D is Last
