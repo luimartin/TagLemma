@@ -5,7 +5,7 @@ from custombutton import CustomButton
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1280 , 720 )
+        MainWindow.resize(1350 , 720 )
         
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")

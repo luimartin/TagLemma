@@ -1,3 +1,4 @@
+from functools import lru_cache
 """ 
 	CONSTANTS 
 """
@@ -58,7 +59,7 @@ def load_dataset():
 
 # Store the dataset in memory
 VALID_ROOTS = load_dataset()
-
+@lru_cache(maxsize=None)
 def check_validation(token):
     return token in VALID_ROOTS  # O(1) lookup
 
@@ -68,9 +69,11 @@ def check_vowel(letter):
 def check_consonant(letter):
     return not check_vowel(letter)
 
+@lru_cache(maxsize=None)
 def count_vowel(word):
     return sum(1 for char in word if check_vowel(char))
 
+@lru_cache(maxsize=None)
 def count_consonant(word):
     return sum(1 for char in word if check_consonant(char))
 
@@ -353,7 +356,7 @@ def clean_stemmed(token, CLEANERS, REPITITION):
 
 	return token
 
-
+@lru_cache(maxsize=None)
 def get_morpheme(token):
     global PERIOD_FLAG, PASS_FLAG
 

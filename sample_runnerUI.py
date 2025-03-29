@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy,
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QCoreApplication, QSize
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6 import QtGui, QtCore
+from datetime import datetime
 import sys
 import pdf
 import TagLemma
@@ -11,6 +12,7 @@ import docx
 import json
 import time
 from tabulate import tabulate
+
 from fuzzymodule import Dialog
 """
 page indexing
@@ -274,7 +276,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 table_data,
                 headers=headers,
                 # Use a grid format for the table
-                floatfmt=".4f",  # Format float values to 4 decimal places
+                floatfmt=".2f",  # Format float values to 4 decimal places
                 stralign="center"
             )
             self.processText.setPlainText(f'Lemma Ranking:\n\n{formatted_data}')
@@ -560,11 +562,14 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         with open(file_path, "r", encoding="utf-8") as file:
             text = file.read()
         return text
-
+    
     def save_json(self):
         # Open a file dialog to choose save location
+        today_date = datetime.now().strftime("%Y-%m-%d")
+        default_file_name = "TALA_" + today_date + "_Tagalog_InflectionToLemma_Annotation"
+        
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save JSON File", "", "JSON Files (*.json);;All Files (*)")
+            self, "Save JSON File", default_file_name, "JSON Files (*.json);;All Files (*)")
 
         if file_path:  # Check if the user selected a file
             try:
@@ -600,7 +605,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         # ======================================================================
         self.setWindowTitle("Tagalog Lemmatization Algorithm")
         self.setWindowIcon(QIcon("assets/12.png"))
-        self.setMinimumSize(1280 , 720)
+        self.setMinimumSize(1350 , 720)
         # labels for character count in text edits
         self.inputLabelChar = QLabel(parent=self.lemmaPage)
         self.inputLabelChar.setObjectName("inputLabelChar")
