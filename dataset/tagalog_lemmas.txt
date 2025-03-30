@@ -707,7 +707,6 @@ Cabiling
 Cabral
 Cabrera
 Cabrillos
-Cabuhat
 Cabungcal
 Cabuyao
 Cacao
@@ -2017,7 +2016,7 @@ Maala
 Maan
 Mababangloob
 Mabalacat
-Mabalot
+mabalot
 Mabato
 Mabel
 Mabilangan
@@ -12912,6 +12911,7 @@ luyos
 m
 ma
 ma-
+maubos
 maaari
 maabilidad
 maabo
@@ -19281,6 +19281,7 @@ sumikip
 sumilang
 sumilip
 sumimangot
+sumimba
 sumimbolo
 suminga
 sumingaw
@@ -20837,6 +20838,7 @@ tumugtog
 tumuka
 tumukso
 tumula
+tumulo
 tumulong
 tumupad
 tuna
