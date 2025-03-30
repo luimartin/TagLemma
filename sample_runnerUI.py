@@ -899,6 +899,18 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             QtCore.Qt.CursorShape.PointingHandCursor))
 
         self.importBtn.setToolTip("import button")
+
+        self.lemmatizeBtn.setToolTip("""Lemmatization is a process that transform words to their dictionary form""")
+        self.importBtn.setToolTip("""Import a file to the input text field""")
+        self.clearBtn.setToolTip("""Clear input and output fields""")
+        self.exportBtn.setToolTip("""Export the output to a PDF file""")
+        self.validTokenBtn.setToolTip("""Display Lemmatizable words""")
+        self.invalidTokenBtn.setToolTip("""Display Non-Lemmatizable word""")
+        self.tokenizationBtn.setToolTip("""Splitting text into smaller units called tokens (words or, subwords)""")
+        self.morphemeBtn.setToolTip("""Smallest unit in a word that has meaning""")
+        self.potentialLemmaBtn.setToolTip("""Display the dictionary form candidate of a word """)
+        self.fuzzyBtn.setToolTip("Simulation of the Lemmatization Process")
+        self.lemmaRankingBtn.setToolTip("Displays how the dictionary form was selected")
         # ======================================================================0
 
 
