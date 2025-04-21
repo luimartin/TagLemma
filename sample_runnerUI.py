@@ -1,7 +1,7 @@
 from sampleUI import Ui_MainWindow
 from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout, QButtonGroup
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QCoreApplication, QSize
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtGui import QIcon, QPixmap, QColor, QTextCharFormat
 from PyQt6 import QtGui, QtCore
 from datetime import datetime
 import sys
@@ -41,6 +41,10 @@ class LemmatizeThread(QThread):
     def run(self):
         self.t = TagLemma.TagLemma() 
         self.t.load_lemma_to_dfame('dataset/tagalog_lemmas.txt')
+        self.t.load_noun_lemma('dataset/tagalog_nouns.txt')
+        self.t.load_verb_lemma('dataset/tagalog_verbs.txt')
+        self.t.load_adj_lemma('dataset/tagalog_adjectives.txt')
+        self.t.load_adverb_lemma('dataset/tagalog_adverbs.txt')
         self.t.load_formal_tagalog('dataset/formal_tagalog.txt')
 
         start = time.perf_counter()
@@ -316,9 +320,23 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             self.resultText.setPlainText(self.valid_result) 
             
         elif i == 1:
-            self.resultText.setPlainText(self.result)
-
-
+            words = self.result.split()
+            cursor = self.resultText.textCursor()
+            self.resultText.clear()
+            for word in words:
+                fmt = QTextCharFormat()
+                fmt.setForeground(QColor("white")) 
+                fmt.setBackground(QColor("#1f6663"))
+                reset = QTextCharFormat()
+                reset.setForeground(QColor("black"))
+                reset.setBackground(QColor("white"))
+                if word in self.valid_result.split():
+                    cursor.insertText(word, fmt)
+                    cursor.insertText(" ", reset)
+                else:
+                    cursor.insertText(word + " ", reset)
+            cursor.insertText(" ", reset)
+            #self.resultText.setPlainText(self.result)
 
     # sets the maximum char count for the input of words
     def max_char_count(self):
@@ -527,7 +545,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     def update_input_label(self):
         x = len(self.inputText.toPlainText())
         self.inputLabelChar.setText(f" Input Character Count: {x}")
-
 
     def update_result_label(self):
         x = len(self.resultText.toPlainText())
