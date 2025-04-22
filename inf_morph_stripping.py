@@ -430,7 +430,6 @@ def get_morpheme(token):
 	else:
 		PERIOD_FLAG = False
 		cle_stem = clean_stemmed(token, CLEANERS, REPITITION)
-		AFFIXES["head"]   = token
 		AFFIXES["prefix"] = '[]'
 		AFFIXES["infix"]  = '[]'
 		AFFIXES["suffix"] = '[]'

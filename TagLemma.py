@@ -96,10 +96,11 @@ class TagLemma:
         self.lemma = []  # forda UI
         self.annotated_lemma = {}
 
-        # PARSING
+        # PARSING for APPLICARTION
         self.parser = []
         self.affixes_for_par = {}
         self.pos_val_for_par = None
+    
 
         self.curr_token = None
         self.input, self.result = '', ''
