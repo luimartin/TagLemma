@@ -95,7 +95,13 @@ class TagLemma:
         self.invalid_tokens = None  # forda UI
         self.lemma = []  # forda UI
         self.annotated_lemma = {}
+
+        # PARSING for APPLICARTION
         self.parser = []
+        self.affixes_for_par = {}
+        self.pos_val_for_par = None
+        self.pos_output = [] # With Part of Speech Tag
+
         self.curr_token = None
         self.input, self.result = '', ''
 
@@ -196,6 +202,7 @@ class TagLemma:
     @lru_cache(maxsize=None)
     def isVerbLemma(self, token):
         if token in self.verb_lemmas['WORDS'].values:
+            self.pos_val_for_par =  "(VRB)"
             return True
 
         return False
@@ -203,6 +210,7 @@ class TagLemma:
     @lru_cache(maxsize=None)
     def isAdjectiveLemma(self, token):
         if token in self.adj_lemmas['WORDS'].values:
+            self.pos_val_for_par =  "(ADJ)"
             return True
 
         return False
@@ -210,6 +218,7 @@ class TagLemma:
     @lru_cache(maxsize=None)
     def isAdverbLemma(self, token):
         if token in self.adv_lemmas['WORDS'].values:
+            self.pos_val_for_par =  "(ADV)"
             return True
 
         return False
@@ -285,7 +294,7 @@ class TagLemma:
         return morpheme_word
 
     def get_morpheme_of_inf(self, token):
-        self.morpheme = ms.get_morpheme(token)
+        self.morpheme, self.affixes_for_par = ms.get_morpheme(token)
         self.list_of_morphemes.append(self.morpheme)
         return self.morpheme
 
@@ -537,18 +546,22 @@ class TagLemma:
 
 
     # For Application right here, not just annotation, but parser
-    def parsing(self, token, lemma, pos_tag):
+    def parsing(self, token, lemma, affixes, pos, tag):
         token_entry = {
             "word" : token,
             "lemma" : lemma,
-            "pos_tag" : pos_tag
+            "pos": pos,
+            "tag" : tag,
+            "morph" : affixes
         }
         self.parser.append(token_entry)
 
-
     def show_annotation(self):
         return self.annotated_lemma
-
+    
+    def show_parsed(self):
+        return self.parser
+    
     def show_inflection_and_morpheme(self):
         temp = []
         seen_tokens = set()  # To track already processed tokens
@@ -878,6 +891,15 @@ class TagLemma:
         self.result_removed_sw = self.remove_stop_words(self.lemmatized_text)
         #self.lemmatized_text = []
 
+    def pos_tag_name(self, tag):
+        tag_map = {
+            "(NN)": "Noun",
+            "(VRB)": "Verb",
+            "(ADJ)": "Adjective",
+            "(ADV)": "Adverb"
+        }
+        return tag_map.get(tag, "Unknown")
+
     @lru_cache(maxsize=None)
     def lemmatize_no_print(self, input_text):
 
@@ -900,11 +922,13 @@ class TagLemma:
                 if self.to_lemmatize_tokens.index(token) not in self.not_to_lemmatize_tokens_index:
                     # Base Variable for POS Tagging
                     pos_val = ""
+                    isInlfected = 0
 
                     # The Current Token Should not be in Lemma Form in Order to Lemmatize
                     if not self.isLemmaAlready(token):
                         # Base variable for handling token
                         self.curr_token = token
+                        final_best_lemma = ""
                         
 
                         self.list_of_lemmatizable_tokens.append(token)
@@ -915,9 +939,10 @@ class TagLemma:
                         
                         if self.isVerbLemma(token) or self.isAdjectiveLemma(token) or self.isAdverbLemma(token):
                             potential_lemmas = self.get_potential_lemmas(token, morpheme, "NOUN")
-                            pos_val = "(NN)"
+                            pos_val = self.pos_val_for_par 
                         else:
                             potential_lemmas = self.get_potential_lemmas(token, morpheme, "ALL")
+                            isInlfected = 1
 
                         # Whenever there are no potential lemmas found, append the normal token instead
                         if potential_lemmas.empty:
@@ -938,29 +963,37 @@ class TagLemma:
                         best_lemma, temp_fp_lemmas = self.show_best_lemma(
                             fuzzy_potential_lemmas)
                         
-                   
-                        
                         self.store_lemma_ranking_in_dict(token, temp_fp_lemmas)
                             
                         self.create_source_to_target(token, best_lemma)
                         self.annotate(inf_input, best_lemma)
-                        #self.show_cosine_similarity(token, best_lemma)
 
                         # Adding POS Tag here in this very moment, to have application
-                        if not (pos_val == "(NN)"):
+                        if isInlfected:
                             pos_val = self.find_pos_val(best_lemma)
-                        best_lemma = best_lemma + pos_val 
+                        final_best_lemma = best_lemma + pos_val 
+
+                        # Adding Parser here in this very moment, to have application
+                        self.parsing(self.curr_token, best_lemma, self.affixes_for_par, self.pos_tag_name(pos_val), pos_val)
 
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
-                        
+                        self.pos_output.append(final_best_lemma)
 
                     else:
-                        token = token + "(NN)"
+                        # Adding Parser here in this very moment, to have application
+                        morpheme = self.get_morpheme_of_inf(token)
+
+                        self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)")
+
                         self.lemmatized_text.append(token)
                         self.lemma.append(token)
+
+                        token = token + "(NN)"
+                        self.pos_output.append(token)
                 else:
                     self.lemmatized_text.append(token)
+                    self.pos_output.append(token)
 
             break
         temp = ''
@@ -972,7 +1005,7 @@ class TagLemma:
         self.result_removed_sw = self.remove_stop_words(self.lemmatized_text)
         # self.lemmatized_text = []
 
-        return (self.result, self.lemma, self)
+        return (self.result, self.lemma, self.pos_output, self)
 
     def exclude_invalid(self):
         result = []
@@ -983,10 +1016,20 @@ class TagLemma:
 
 if __name__ == "__main__":
     t = TagLemma()
-    str_input = "kumakain kumakain tumakbo tumakbo"
+    str_input = "kumakain ako ng pagkain habang pinanonood ang palabas"
     t.load_lemma_to_dfame('dataset/tagalog_lemmas.txt')
+    t.load_noun_lemma('dataset/tagalog_nouns.txt')
+    t.load_verb_lemma('dataset/tagalog_verbs.txt')  
+    t.load_adj_lemma('dataset/tagalog_adjectives.txt')
+    t.load_adverb_lemma('dataset/tagalog_adverbs.txt')
     t.load_formal_tagalog('dataset/formal_tagalog.txt')
-    t.lemmatize(str_input)
+
+    t.lemmatize_no_print(str_input)
+    print(t.parser)
+    print(t.lemma)
+    print(t.lemmatized_text)
+    print(t.pos_output)
+
     #print(t.show_annotation())
     #print(t.show_inflection_and_morpheme())
     #print(t.result_removed_sw)

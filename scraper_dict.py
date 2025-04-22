@@ -1,9 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 
-def scrape_all_tagalog_nouns(stop_word="yata", output_file="tagalog_adverbs.txt"):
+def scrape_all_tagalog_nouns(stop_word="yata", output_file="tagalog_nouns_meaning.txt"):
     base_url = "https://en.wiktionary.org"
-    start_path = "/wiki/Category:Tagalog_adverbs"
+    start_path = "/wiki/Category:Tagalog_nouns"
     headers = {
         'User-Agent': 'Mozilla/5.0'
     }
