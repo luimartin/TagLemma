@@ -6,6 +6,8 @@ import re
 import inf_morph_stripping as ms
 from functools import lru_cache
 
+#  pos_output, lemma_obj
+
 class TagLemma:
     def __init__(self):
         self.PREFIX_SET = [
@@ -95,12 +97,14 @@ class TagLemma:
         self.invalid_tokens = None  # forda UI
         self.lemma = []  # forda UI
         self.annotated_lemma = {}
+    
 
         # PARSING for APPLICARTION
         self.parser = []
         self.affixes_for_par = {}
         self.pos_val_for_par = None
         self.pos_output = [] # With Part of Speech Tag
+        self.lemma_pos = []
 
         self.curr_token = None
         self.input, self.result = '', ''
@@ -557,10 +561,7 @@ class TagLemma:
         self.parser.append(token_entry)
 
     def show_annotation(self):
-        return self.annotated_lemma
-    
-    def show_parsed(self):
-        return self.parser
+        return [self.annotated_lemma, self.parser]
     
     def show_inflection_and_morpheme(self):
         temp = []
@@ -979,6 +980,7 @@ class TagLemma:
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
                         self.pos_output.append(final_best_lemma)
+                        self.lemma_pos.append(final_best_lemma)
 
                     else:
                         # Adding Parser here in this very moment, to have application
@@ -991,9 +993,11 @@ class TagLemma:
 
                         token = token + "(NN)"
                         self.pos_output.append(token)
+
                 else:
                     self.lemmatized_text.append(token)
                     self.pos_output.append(token)
+
 
             break
         temp = ''
@@ -1005,7 +1009,7 @@ class TagLemma:
         self.result_removed_sw = self.remove_stop_words(self.lemmatized_text)
         # self.lemmatized_text = []
 
-        return (self.result, self.lemma, self.pos_output, self)
+        return (self.result, self.lemma, self.pos_output, self.lemma_pos, self)
 
     def exclude_invalid(self):
         result = []
