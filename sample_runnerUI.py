@@ -1,7 +1,7 @@
 from sampleUI import Ui_MainWindow
 from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout, QButtonGroup
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QCoreApplication, QSize
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtGui import QIcon, QPixmap, QColor, QTextCharFormat
 from PyQt6 import QtGui, QtCore
 from datetime import datetime
 import sys
@@ -31,7 +31,7 @@ class LemmatizeThread(QThread):
     # Signal to send the result back to the main thread
     # update this shit if u want to add the variable to be send to the UI
     finished = pyqtSignal(str, list, list, list, list,
-                          list, list, list, dict, dict, object)
+                          list, list, list, list, dict, list, list, object)
 
     def __init__(self, text):
         super().__init__()
@@ -41,10 +41,14 @@ class LemmatizeThread(QThread):
     def run(self):
         self.t = TagLemma.TagLemma() 
         self.t.load_lemma_to_dfame('dataset/tagalog_lemmas.txt')
+        self.t.load_noun_lemma('dataset/tagalog_nouns.txt')
+        self.t.load_verb_lemma('dataset/tagalog_verbs.txt')
+        self.t.load_adj_lemma('dataset/tagalog_adjectives.txt')
+        self.t.load_adverb_lemma('dataset/tagalog_adverbs.txt')
         self.t.load_formal_tagalog('dataset/formal_tagalog.txt')
 
         start = time.perf_counter()
-        result, lemmas, self.lemma_obj = self.t.lemmatize_no_print(self.text)
+        result, lemmas, pos_output, lemma_pos, lemma_obj = self.t.lemmatize_no_print(self.text)
         end = time.perf_counter()
         print(f"Time Elapsed: {end - start}")
 
@@ -55,12 +59,13 @@ class LemmatizeThread(QThread):
         morphemes = self.t.show_inflection_and_morpheme()
         exclude_invalid = self.t.exclude_invalid()
         annotation = self.t.show_annotation()
+        print(lemma_pos)
         source_to_target = self.t.source_to_target
 
         # To be send to the main UI sadhkjasdhas
         self.finished.emit(result, valid_tokens, lemmas,
                            invalid_tokens, tokenized, morphemes, result_removed_sw,
-                           exclude_invalid, annotation, source_to_target, self.lemma_obj)
+                           exclude_invalid, annotation, source_to_target, pos_output, lemma_pos, lemma_obj)
 
 
 class CustomProgressDialog(QProgressDialog):
@@ -194,15 +199,25 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
         self.horizontalSpacer_4 = QSpacerItem(
             40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        
         self.horizontalLayout_7.addItem(self.horizontalSpacer_4)
         self.export_annotation = QPushButton(parent=self.annotationPage)
         self.export_annotation.setObjectName(u"export_annotation")
         self.export_annotation.setText("Export Annotation")
+        self.export_annotation.setCursor(QtGui.QCursor(
+            QtCore.Qt.CursorShape.PointingHandCursor))
         self.horizontalLayout_7.addWidget(self.export_annotation)
+        
+        self.annotation_mode = QPushButton(parent=self.annotationPage)
+        self.annotation_mode.setObjectName(u"annotation_mode")
+        self.annotation_mode.setText("Annotation")
+        self.annotation_mode.setCursor(QtGui.QCursor(
+            QtCore.Qt.CursorShape.PointingHandCursor))
+        self.horizontalLayout_7.addWidget(self.annotation_mode)
         self.verticalLayout_6.addLayout(self.horizontalLayout_7)
-        self.annotationTable.setReadOnly(True)
+        self.annotation_mode.clicked.connect(self.switch_mode)
         self.export_annotation.clicked.connect(self.save_json)
-
+    
     def fuzzy_dialog(self):
         self.processDropdown.hide()
         self.processDropdownLabel.hide()
@@ -316,9 +331,62 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             self.resultText.setPlainText(self.valid_result) 
             
         elif i == 1:
-            self.resultText.setPlainText(self.result)
-
-
+            words = self.result.split()
+            cursor = self.resultText.textCursor()
+            self.resultText.clear()
+            for word in words:
+                fmt = QTextCharFormat()
+                fmt.setForeground(QColor("white")) 
+                fmt.setBackground(QColor("#1f6663"))
+                reset = QTextCharFormat()
+                reset.setForeground(QColor("black"))
+                reset.setBackground(QColor("white"))
+                if word in self.valid_result.split():
+                    cursor.insertText(word, fmt)
+                    cursor.insertText(" ", reset)
+                else:
+                    cursor.insertText(word + " ", reset)
+            cursor.insertText(" ", reset)
+            #self.resultText.setPlainText(self.result)
+        
+        # new item in drop down list to display POS tagging feature
+        elif i == 2:
+            words = self.pos_output
+            cursor = self.resultText.textCursor()
+            self.resultText.clear()
+            for word in words:
+                # added unique color based on word type
+                fmt = self.selector(word)
+                reset = QTextCharFormat()
+                reset.setForeground(QColor("black"))
+                reset.setBackground(QColor("white"))
+                if word in self.lemma_pos:
+                    cursor.insertText(word, fmt)
+                    cursor.insertText(" ", reset)
+                else:
+                    cursor.insertText(word + " ", reset)
+            cursor.insertText(" ", reset)
+    
+    # changes the highlight formatting based on word type
+    def selector(self, word):
+        fmt = QTextCharFormat()
+        if word.endswith("(NN)"):
+            fmt.setForeground(QColor("white")) 
+            fmt.setBackground(QColor("red"))
+        elif word.endswith("(VRB)"):
+            fmt.setForeground(QColor("white")) 
+            fmt.setBackground(QColor("blue"))
+        elif word.endswith("(ADJ)"):
+            fmt.setForeground(QColor("white")) 
+            fmt.setBackground(QColor("#1f6663"))
+        elif word.endswith("(ADV)"):
+            fmt.setForeground(QColor("white")) 
+            fmt.setBackground(QColor("orange"))
+        elif word.endswith("(UNK)"):
+            fmt.setForeground(QColor("white")) 
+            fmt.setBackground(QColor("gray"))
+        return fmt
+        
 
     # sets the maximum char count for the input of words
     def max_char_count(self):
@@ -415,7 +483,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     # update UI from another threadsasdasd
     def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens,
-                                  tokenized, morphemes, result_removed_sw, exclude_invalid, annotation, source_to_target):
+                                  tokenized, morphemes, result_removed_sw, exclude_invalid, annotation, source_to_target, pos_output, lemma_pos):
         
         self.processText.setPlainText("")
         
@@ -425,18 +493,22 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.lemmas = lemmas
         self.invalid_tokens = invalid_tokens
         self.result = result  # store the lemma
+        self.pos_output = pos_output
+        self.lemma_pos = lemma_pos
         self.tokenized = tokenized
         self.morphemes = morphemes
         self.result_removed_sw = result_removed_sw
         self.exclude_invalid = exclude_invalid
-        self.annotation = annotation
+        self.annotation, _ = annotation
+        self.parser = self.restructure(annotation[1])
         self.source_to_target = source_to_target
         self.thread = None
         self.comboBox.setEnabled(True)
         self.disable_features(True)
         self.comboBox.show()
-        self.comboBoxLabel.show()
-        
+        self.comboBoxLabel.show() 
+        # annotation mode global variable 
+        self.mode = 1
 
         self.keys = list(self.source_to_target.keys())
         self.processDropdown.addItems(self.keys)
@@ -446,13 +518,24 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         else: 
             self.resultText.setPlainText("No Valid Text to Lemmatize.")
     
-
         if annotation:
-            temp = json.dumps(annotation, indent=6)
+            temp = json.dumps(annotation[0], indent=6)
             self.annotationTable.setPlainText(temp)
         else:
             self.annotationTable.setPlainText("No annotation to display.")
 
+    def restructure(self, data):
+        restructured_data = []
+        for entry in data:
+            token_entry = {
+                "word": entry["word"],
+                "lemma": entry["lemma"],
+                "pos": entry["pos"],
+                "tag": entry["tag"],
+                "morph": entry["morph"]
+            }
+            restructured_data.append(token_entry)
+        return restructured_data
 
     def valid_tokens_function(self):
         result_str = ", ".join(self.valid_tokens)
@@ -528,7 +611,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         x = len(self.inputText.toPlainText())
         self.inputLabelChar.setText(f" Input Character Count: {x}")
 
-
     def update_result_label(self):
         x = len(self.resultText.toPlainText())
         self.resultLabelChar.setText(f" Output Character Count: {x}")
@@ -578,7 +660,11 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             try:
                 with open(file_path, "w", encoding="utf-8") as file:
                     # Write JSON to file
-                    json.dump(self.annotation, file, indent=4)
+                    # added mode switching handler
+                    if self.mode == 1:
+                        json.dump(self.annotation, file, indent=4)
+                    elif self.mode == 0:
+                        json.dump(self.parser, file, indent=4)
                 print(f"File saved successfully: {file_path}")
                 self.message_dialog(QMessageBox.Icon.Information,
                                     f"File saved successfully: {file_path}", "Success")
@@ -587,6 +673,23 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 self.message_dialog(QMessageBox.Icon.Warning,
                                     f"Error saving file: {e}", "Warning")
 
+    # mode switch function for parsed text and annotation text
+    def switch_mode(self):
+        # mode switching executoion
+        self.mode = 1 if self.mode == 0 else 0
+        if self.mode == 1:
+            temp = json.dumps(self.annotation, indent=6)
+            self.annotationTable.setPlainText(temp)
+            self.annotation_mode.setText("Annotation")
+            self.annotation_mode.setStyleSheet("background: white; color: black;")
+            
+        elif self.mode == 0:
+            temp = json.dumps(self.parser, indent=6)
+            self.annotationTable.setPlainText(temp)
+            self.annotation_mode.setText("Parsed")
+            self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")
+        
+    
     # function connectors for stacked widget
     def switch_to_feature(self):
         self.stackedWidget.setCurrentIndex(0)
