@@ -376,7 +376,6 @@ ananias
 anas
 anat
 anatot
-and
 andres
 andronico
 anem
@@ -13763,7 +13762,6 @@ obot
 obsebahan
 obserbahan
 oded
-of
 ofel
 officers
 ofir
@@ -17065,6 +17063,7 @@ pitumpu
 pitumpung
 pitung
 plaka
+pinakamakapangyarihan
 planeta
 plano
 planong
@@ -19245,6 +19244,7 @@ tibok
 ticio
 tifsa
 tig
+telebisyon
 tig-aanim
 tig-iisang
 tig-pipito
