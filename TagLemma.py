@@ -100,7 +100,7 @@ class TagLemma:
         self.parser = []
         self.affixes_for_par = {}
         self.pos_val_for_par = None
-    
+        self.pos_output = [] # With Part of Speech Tag
 
         self.curr_token = None
         self.input, self.result = '', ''
@@ -976,22 +976,24 @@ class TagLemma:
                         # Adding Parser here in this very moment, to have application
                         self.parsing(self.curr_token, best_lemma, self.affixes_for_par, self.pos_tag_name(pos_val), pos_val)
 
+                        self.lemmatized_text.append(best_lemma)
+                        self.lemma.append(best_lemma)
+                        self.pos_output.append(final_best_lemma)
 
-                        self.lemmatized_text.append(final_best_lemma)
-                        self.lemma.append(final_best_lemma)
-                        
                     else:
                         # Adding Parser here in this very moment, to have application
                         morpheme = self.get_morpheme_of_inf(token)
 
                         self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)")
 
-                        token = token + "(NN)"
-
                         self.lemmatized_text.append(token)
                         self.lemma.append(token)
+
+                        token = token + "(NN)"
+                        self.pos_output.append(token)
                 else:
                     self.lemmatized_text.append(token)
+                    self.pos_output.append(token)
 
             break
         temp = ''
@@ -1003,7 +1005,7 @@ class TagLemma:
         self.result_removed_sw = self.remove_stop_words(self.lemmatized_text)
         # self.lemmatized_text = []
 
-        return (self.result, self.lemma, self)
+        return (self.result, self.lemma, self.pos_output, self)
 
     def exclude_invalid(self):
         result = []
@@ -1024,6 +1026,9 @@ if __name__ == "__main__":
 
     t.lemmatize_no_print(str_input)
     print(t.parser)
+    print(t.lemma)
+    print(t.lemmatized_text)
+    print(t.pos_output)
 
     #print(t.show_annotation())
     #print(t.show_inflection_and_morpheme())
