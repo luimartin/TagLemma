@@ -31,7 +31,7 @@ class LemmatizeThread(QThread):
     # Signal to send the result back to the main thread
     # update this shit if u want to add the variable to be send to the UI
     finished = pyqtSignal(str, list, list, list, list,
-                          list, list, list, list, dict, list, list, object)
+                          list, list, list, list, dict, object, list, list)
 
     def __init__(self, text):
         super().__init__()
@@ -48,7 +48,8 @@ class LemmatizeThread(QThread):
         self.t.load_formal_tagalog('dataset/formal_tagalog.txt')
 
         start = time.perf_counter()
-        result, lemmas, pos_output, lemma_pos, lemma_obj = self.t.lemmatize_no_print(self.text)
+        result, lemmas,  self.lemma_obj, pos_output, lemma_pos = self.t.lemmatize_no_print(self.text)
+        print(pos_output)
         end = time.perf_counter()
         print(f"Time Elapsed: {end - start}")
 
@@ -59,13 +60,12 @@ class LemmatizeThread(QThread):
         morphemes = self.t.show_inflection_and_morpheme()
         exclude_invalid = self.t.exclude_invalid()
         annotation = self.t.show_annotation()
-        print(lemma_pos)
         source_to_target = self.t.source_to_target
 
         # To be send to the main UI sadhkjasdhas
         self.finished.emit(result, valid_tokens, lemmas,
                            invalid_tokens, tokenized, morphemes, result_removed_sw,
-                           exclude_invalid, annotation, source_to_target, pos_output, lemma_pos, lemma_obj)
+                           exclude_invalid, annotation, source_to_target, self.lemma_obj, pos_output, lemma_pos)
 
 
 class CustomProgressDialog(QProgressDialog):
@@ -483,7 +483,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     # update UI from another threadsasdasd
     def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens,
-                                  tokenized, morphemes, result_removed_sw, exclude_invalid, annotation, source_to_target, pos_output, lemma_pos):
+                                  tokenized, morphemes, result_removed_sw, exclude_invalid, annotation, source_to_target, TagLemma, pos_output, lemma_pos):
         
         self.processText.setPlainText("")
         
@@ -519,7 +519,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             self.resultText.setPlainText("No Valid Text to Lemmatize.")
     
         if annotation:
-            temp = json.dumps(annotation[0], indent=6)
+            temp = json.dumps(annotation[0], indent=4)
             self.annotationTable.setPlainText(temp)
         else:
             self.annotationTable.setPlainText("No annotation to display.")
@@ -532,7 +532,11 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 "lemma": entry["lemma"],
                 "pos": entry["pos"],
                 "tag": entry["tag"],
-                "morph": entry["morph"]
+                "morph": {"head":entry["morph"]["head"], 
+                          "prefix":entry["morph"]["prefix"],
+                          "infix":entry["morph"]["infix"], 
+                          "suffix":entry["morph"]["suffix"], 
+                          "dedupli":entry["morph"]["dedupli"] }
             }
             restructured_data.append(token_entry)
         return restructured_data
@@ -678,13 +682,13 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         # mode switching executoion
         self.mode = 1 if self.mode == 0 else 0
         if self.mode == 1:
-            temp = json.dumps(self.annotation, indent=6)
+            temp = json.dumps(self.annotation, indent=4)
             self.annotationTable.setPlainText(temp)
             self.annotation_mode.setText("Annotation")
             self.annotation_mode.setStyleSheet("background: white; color: black;")
             
         elif self.mode == 0:
-            temp = json.dumps(self.parser, indent=6)
+            temp = json.dumps(self.parser, indent=4)
             self.annotationTable.setPlainText(temp)
             self.annotation_mode.setText("Parsed")
             self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")

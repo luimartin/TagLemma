@@ -993,6 +993,7 @@ class TagLemma:
 
                         token = token + "(NN)"
                         self.pos_output.append(token)
+                        self.lemma_pos.append(token)
 
                 else:
                     self.lemmatized_text.append(token)
@@ -1009,7 +1010,7 @@ class TagLemma:
         self.result_removed_sw = self.remove_stop_words(self.lemmatized_text)
         # self.lemmatized_text = []
 
-        return (self.result, self.lemma, self.pos_output, self.lemma_pos, self)
+        return (self.result, self.lemma, self, self.pos_output, self.lemma_pos)
 
     def exclude_invalid(self):
         result = []
