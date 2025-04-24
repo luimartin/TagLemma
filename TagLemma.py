@@ -5,6 +5,7 @@ import math
 import re
 import inf_morph_stripping as ms
 from functools import lru_cache
+import json
 
 #  pos_output, lemma_obj
 
@@ -105,6 +106,7 @@ class TagLemma:
         self.pos_val_for_par = None
         self.pos_output = [] # With Part of Speech Tag
         self.lemma_pos = []
+        self.lemma_def = None
 
         self.curr_token = None
         self.input, self.result = '', ''
@@ -158,6 +160,11 @@ class TagLemma:
             file_contents = file.read()
 
         self.formal_words = file_contents.split()
+
+    def load_def(self, json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            self.lemma_def = json.load(f)
+    
 
     # =======================MAIN ARCHITECTURE HERE=======================
 
@@ -550,14 +557,14 @@ class TagLemma:
 
 
     # For Application right here, not just annotation, but parser
-    def parsing(self, token, lemma, affixes, pos, tag, focus):
+    def parsing(self, token, lemma, affixes, pos, tag, definition):
         token_entry = {
             "word" : token,
             "lemma" : lemma,
             "pos": pos,
             "tag" : tag,
             "morph" : affixes,
-            "focus" : focus
+            "definition" : definition
         }
         self.parser.append(token_entry)
 
@@ -901,17 +908,15 @@ class TagLemma:
             "(ADV)": "Adverb"
         }
         return tag_map.get(tag, "Unknown")
+
+    def get_definition(self, word):
+        for entry in self.lemma_def:
+            if entry["word"].lower() == word.lower():
+                return entry["definition"]
+         
+        return "Definition not found."
     
     def determine_focus(self, affixes_morph):
-        """
-        Determines the focus (voice) of a Tagalog verb based on its affix structure.
-
-        Parameters:
-            affixes_morph (dict): A dictionary with keys: root, prefix, infix, suffix, dedupli
-
-        Returns:
-            str: The focus type (e.g., Actor Focus, Object Focus, etc.)
-        """
         # Extract affix lists
         prefix = affixes_morph.get('prefix', [])
         infix = affixes_morph.get('infix', [])
@@ -1013,7 +1018,7 @@ class TagLemma:
                         final_best_lemma = best_lemma + pos_val 
 
                         # Adding Parser here in this very moment, to have application
-                        self.parsing(self.curr_token, best_lemma, self.affixes_for_par, self.pos_tag_name(pos_val), pos_val, "")
+                        self.parsing(self.curr_token, best_lemma, self.affixes_for_par, self.pos_tag_name(pos_val), pos_val, self.get_definition(best_lemma))
 
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
@@ -1024,7 +1029,7 @@ class TagLemma:
                         # Adding Parser here in this very moment, to have application
                         morpheme = self.get_morpheme_of_inf(token)
 
-                        self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)", "Non-Verb")
+                        self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)", self.get_definition(token))
 
                         self.lemmatized_text.append(token)
                         self.lemma.append(token)
@@ -1066,6 +1071,7 @@ if __name__ == "__main__":
     t.load_adj_lemma('dataset/tagalog_adjectives.txt')
     t.load_adverb_lemma('dataset/tagalog_adverbs.txt')
     t.load_formal_tagalog('dataset/formal_tagalog.txt')
+    t.load_def("dataset/tagalog_dictionary.json")
 
     t.lemmatize_no_print(str_input)
     print(t.parser)
