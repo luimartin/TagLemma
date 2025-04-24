@@ -46,6 +46,7 @@ class LemmatizeThread(QThread):
         self.t.load_adj_lemma('dataset/tagalog_adjectives.txt')
         self.t.load_adverb_lemma('dataset/tagalog_adverbs.txt')
         self.t.load_formal_tagalog('dataset/formal_tagalog.txt')
+        self.t.load_def('dataset/tagalog_dictionary.json')
 
         start = time.perf_counter()
         result, lemmas,  self.lemma_obj, pos_output, lemma_pos = self.t.lemmatize_no_print(self.text)
@@ -542,11 +543,14 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 "lemma": entry["lemma"],
                 "part-of-speech": entry["pos"],
                 "tag": entry["tag"],
-                "morphemes": {"root":entry["morph"]["root"], 
+                "definition": entry["definition"],
+                "morphology": {
+                          "root":entry["morph"]["root"], 
                           "prefix":entry["morph"]["prefix"],
                           "infix":entry["morph"]["infix"], 
                           "suffix":entry["morph"]["suffix"], 
-                          "repeat":entry["morph"]["dedupli"] },
+                          "repeat":entry["morph"]["dedupli"]
+                },
             }
             restructured_data.append(token_entry)
         return restructured_data
@@ -695,19 +699,33 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     # mode switch function for parsed text and annotation text
     def switch_mode(self):
-        # mode switching executoion
         self.mode = 1 if self.mode == 0 else 0
+
         if self.mode == 1:
+            # Lemma:Inflection mode — just pretty print
             temp = json.dumps(self.annotation, indent=4)
             self.annotationTable.setPlainText(temp)
             self.annotation_mode.setText("Switch to Morphological Parsing")
-            self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")
-            
-        elif self.mode == 0:
-            temp = json.dumps(self.parser, indent=4)
-            self.annotationTable.setPlainText(temp)
-            self.annotation_mode.setText("Swtich to Lemma-Inflection Pair")
-            self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")
+
+        else:
+            # Morphological Parsing mode — format morphemes as single-line
+            formatted = []
+            for item in self.parser:
+                morph_str = json.dumps(item["morphology"], separators=(",", ": "))
+                item_copy = dict(item)
+                del item_copy["morphology"]
+
+                pretty = json.dumps(item_copy, indent=4).splitlines()
+                pretty = pretty[:-1]
+                pretty.append(f'    "morphology": {morph_str}')
+                pretty.append("}")
+                formatted.append("\n".join(pretty))
+
+            final_output = "[\n" + ",\n".join(formatted) + "\n]"
+            self.annotationTable.setPlainText(final_output)
+            self.annotation_mode.setText("Switch to Lemma-Inflection Pair")
+
+        self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")
         
     
     # function connectors for stacked widget
