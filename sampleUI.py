@@ -52,7 +52,7 @@ class Ui_MainWindow(object):
         self.processBtn = CustomButton("assets/engineering.png", "Process", "\nSee the lemmatization process behind the scene", self.featurePage)
         self.processBtn.setObjectName("processBtn")
         self.horizontalLayout_4.addWidget(self.processBtn)
-        self.annotationBtn = CustomButton("assets/note.png", "Annotation", "\nLemma-Inflection and Morphological Parsing", self.featurePage)
+        self.annotationBtn = CustomButton("assets/note.png", "Annotation", "\nLemma-Inflection Pair and Morphological Parsing", self.featurePage)
         self.annotationBtn.setObjectName("annotationBtn")
         self.horizontalLayout_4.addWidget(self.annotationBtn)
         self.stackedWidget.addWidget(self.featurePage)

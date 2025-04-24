@@ -541,6 +541,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             token_entry = {
                 "word": entry["word"],
                 "lemma": entry["lemma"],
+                "morphological_similarity": entry["morph_sim"],
                 "part-of-speech": entry["pos"],
                 "tag": entry["tag"],
                 "definition": entry["definition"],

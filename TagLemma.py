@@ -541,9 +541,9 @@ class TagLemma:
                     return sorted_lemmas.iloc[0]['WORDS'], sorted_lemmas
 
             # If token is NOT already a lemma, return the full sorted list without filtering
-            return sorted_lemmas.iloc[0]['WORDS'], sorted_lemmas
+            return sorted_lemmas.iloc[0]['WORDS'], sorted_lemmas, round(sorted_lemmas.iloc[0]['Rank Scores'], 2)
 
-        return self.curr_token, potential_lemmas  # If empty, return original token and empty lemmas
+        return self.curr_token, potential_lemmas, 0.0 # If empty, return original token and empty lemmas
 
     def annotate(self, inf_input, lemm_output):
         if inf_input == lemm_output:
@@ -557,14 +557,15 @@ class TagLemma:
 
 
     # For Application right here, not just annotation, but parser
-    def parsing(self, token, lemma, affixes, pos, tag, definition):
+    def parsing(self, token, lemma, affixes, pos, tag, definition, morph_sim):
         token_entry = {
             "word" : token,
             "lemma" : lemma,
             "pos": pos,
             "tag" : tag,
             "morph" : affixes,
-            "definition" : definition
+            "definition" : definition,
+            "morph_sim": morph_sim
         }
         self.parser.append(token_entry)
 
@@ -1004,7 +1005,7 @@ class TagLemma:
                         fuzzy_potential_lemmas = self.fuzzy_matching(
                             temp_token, potential_lemmas)
                         
-                        best_lemma, temp_fp_lemmas = self.show_best_lemma(
+                        best_lemma, temp_fp_lemmas, lemma_score = self.show_best_lemma(
                             fuzzy_potential_lemmas)
                         
                         self.store_lemma_ranking_in_dict(token, temp_fp_lemmas)
@@ -1018,7 +1019,7 @@ class TagLemma:
                         final_best_lemma = best_lemma + pos_val 
 
                         # Adding Parser here in this very moment, to have application
-                        self.parsing(self.curr_token, best_lemma, self.affixes_for_par, self.pos_tag_name(pos_val), pos_val, self.get_definition(best_lemma))
+                        self.parsing(self.curr_token, best_lemma, self.affixes_for_par, self.pos_tag_name(pos_val), pos_val, self.get_definition(best_lemma), lemma_score)
 
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
@@ -1029,7 +1030,7 @@ class TagLemma:
                         # Adding Parser here in this very moment, to have application
                         morpheme = self.get_morpheme_of_inf(token)
 
-                        self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)", self.get_definition(token))
+                        self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)", self.get_definition(token), 1.00)
 
                         self.lemmatized_text.append(token)
                         self.lemma.append(token)
