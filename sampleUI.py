@@ -1,5 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from custombutton import CustomButton
+from ClassEdit import ClickableTextEdit
+
 
 
 class Ui_MainWindow(object):
@@ -80,7 +82,7 @@ class Ui_MainWindow(object):
         self.resulLabel = QtWidgets.QLabel(parent=self.lemmaPage)
         self.resulLabel.setObjectName("resulLabel")
         self.verticalLayout_2.addWidget(self.resulLabel)
-        self.resultText = QtWidgets.QPlainTextEdit(parent=self.lemmaPage)
+        self.resultText = ClickableTextEdit(parent=self.lemmaPage)
         self.resultText.setObjectName("resultText")
         self.verticalLayout_2.addWidget(self.resultText)
         self.horizontalLayout.addLayout(self.verticalLayout_2)

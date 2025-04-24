@@ -131,6 +131,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.t_thread = None
         self.taglemma = TagLemma.TagLemma()
         self.headerWidget.setMinimumHeight(150)
+        
+        
 
         # set the size for the btns in landing page
         self.lemmaBtn.setSizePolicy(
@@ -354,49 +356,10 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         # new item in drop down list to display POS tagging feature
         elif i == 2:
             words = self.pos_output
-            cursor = self.resultText.textCursor()
             self.resultText.clear()
-            # added unique color based on word type
-            reset = QTextCharFormat()
-            reset.setForeground(QColor("black"))
-            reset.setBackground(QColor("white"))
-            """
-            cursor.insertText("Legend:\n", reset)
-            cursor.insertText("Noun(NN)", reset)
-            cursor.insertText(", Verb(VRB)", reset)
-            cursor.insertText(", Adjective(ADJ)", reset)
-            cursor.insertText(", Adverb(ADV)", reset)
-            cursor.insertText(", Unknown(UNK)\n\n", reset)
-            """
-            for word in words:
-                fmt = self.selector(word)
-                if word in self.lemma_pos:
-                    cursor.insertText(word, fmt)
-                    cursor.insertText(" ", reset)
-                else:
-                    cursor.insertText(word + " ", reset)
-            cursor.insertText(" ", reset)
-            
-    
-    # changes the highlight formatting based on word type
-    def selector(self, word):
-        fmt = QTextCharFormat()
-        if word.endswith("(NN)"):
-            fmt.setForeground(QColor("black")) 
-            fmt.setBackground(QColor("#fb6962"))
-        elif word.endswith("(VRB)"):
-            fmt.setForeground(QColor("black")) 
-            fmt.setBackground(QColor("#a9def9"))
-        elif word.endswith("(ADJ)"):
-            fmt.setForeground(QColor("black")) 
-            fmt.setBackground(QColor("#79de79"))
-        elif word.endswith("(ADV)"):
-            fmt.setForeground(QColor("white")) 
-            fmt.setBackground(QColor("#fcfc99"))
-        elif word.endswith("(UNK)"):
-            fmt.setForeground(QColor("white")) 
-            fmt.setBackground(QColor("gray"))
-        return fmt
+            self.resultText.set_parser(self.parser)
+            for index, word in enumerate(words):
+                self.resultText.append_link(f"link{index}", word)
         
 
     # sets the maximum char count for the input of words
@@ -933,6 +896,15 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     gridline-color: black;
                 }
             """))
+        
+        self.resultText.setStyleSheet("""
+            background: #ffffff;
+            border: 2px solid black;
+            border-radius: 5px;
+            font-size: 18px;
+            font-family: "Consolas";  
+            padding-left: 10px;                         
+        """)
 
 
         self.featureBtn.setIcon(QIcon("assets/feature-icon.png"))
