@@ -550,13 +550,14 @@ class TagLemma:
 
 
     # For Application right here, not just annotation, but parser
-    def parsing(self, token, lemma, affixes, pos, tag):
+    def parsing(self, token, lemma, affixes, pos, tag, focus):
         token_entry = {
             "word" : token,
             "lemma" : lemma,
             "pos": pos,
             "tag" : tag,
-            "morph" : affixes
+            "morph" : affixes,
+            "focus" : focus
         }
         self.parser.append(token_entry)
 
@@ -900,6 +901,43 @@ class TagLemma:
             "(ADV)": "Adverb"
         }
         return tag_map.get(tag, "Unknown")
+    
+    def determine_focus(self, affixes_morph):
+        """
+        Determines the focus (voice) of a Tagalog verb based on its affix structure.
+
+        Parameters:
+            affixes_morph (dict): A dictionary with keys: root, prefix, infix, suffix, dedupli
+
+        Returns:
+            str: The focus type (e.g., Actor Focus, Object Focus, etc.)
+        """
+        # Extract affix lists
+        prefix = affixes_morph.get('prefix', [])
+        infix = affixes_morph.get('infix', [])
+        suffix = affixes_morph.get('suffix', [])
+        
+        # Combine all affixes for simplified checking
+        all_affixes = prefix + infix + suffix
+
+        # Mapping affix patterns to focus types
+        if any(a in ['um', 'mag', 'ma', 'mang'] for a in all_affixes) or 'um' in infix:
+            return 'Actor'
+        elif any(a in ['in','an', 'i', 'ipa', 'ni'] for a in all_affixes):
+            return 'Object'
+        elif any(a in ['an'] for a in suffix):
+            return 'Locative'
+        elif any(a in ['ipag'] for a in all_affixes):
+            return 'Benefactive'
+        elif any(a in ['ipang'] for a in all_affixes):
+            return 'Instrumental'
+        elif any(a in ['ika'] for a in all_affixes):
+            return 'Reason'
+        elif any(a in ['pa', 'pina'] for a in prefix):
+            # Special case: 'pa-' often forms imperative or causative, not always voice-specific
+            return 'Causative'
+        else:
+            return 'Non-Verb'
 
     @lru_cache(maxsize=None)
     def lemmatize_no_print(self, input_text):
@@ -975,7 +1013,7 @@ class TagLemma:
                         final_best_lemma = best_lemma + pos_val 
 
                         # Adding Parser here in this very moment, to have application
-                        self.parsing(self.curr_token, best_lemma, self.affixes_for_par, self.pos_tag_name(pos_val), pos_val)
+                        self.parsing(self.curr_token, best_lemma, self.affixes_for_par, self.pos_tag_name(pos_val), pos_val, "")
 
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
@@ -986,7 +1024,7 @@ class TagLemma:
                         # Adding Parser here in this very moment, to have application
                         morpheme = self.get_morpheme_of_inf(token)
 
-                        self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)")
+                        self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)", "Non-Verb")
 
                         self.lemmatized_text.append(token)
                         self.lemma.append(token)
@@ -1031,9 +1069,6 @@ if __name__ == "__main__":
 
     t.lemmatize_no_print(str_input)
     print(t.parser)
-    print(t.lemma)
-    print(t.lemmatized_text)
-    print(t.pos_output)
 
     #print(t.show_annotation())
     #print(t.show_inflection_and_morpheme())

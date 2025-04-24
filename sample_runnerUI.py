@@ -210,7 +210,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         
         self.annotation_mode = QPushButton(parent=self.annotationPage)
         self.annotation_mode.setObjectName(u"annotation_mode")
-        self.annotation_mode.setText("Annotation")
+        self.annotation_mode.setText("Switch to Morphological Parsing")
+        self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")
         self.annotation_mode.setCursor(QtGui.QCursor(
             QtCore.Qt.CursorShape.PointingHandCursor))
         self.horizontalLayout_7.addWidget(self.annotation_mode)
@@ -354,34 +355,43 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             words = self.pos_output
             cursor = self.resultText.textCursor()
             self.resultText.clear()
+            # added unique color based on word type
+            reset = QTextCharFormat()
+            reset.setForeground(QColor("black"))
+            reset.setBackground(QColor("white"))
+            """
+            cursor.insertText("Legend:\n", reset)
+            cursor.insertText("Noun(NN)", reset)
+            cursor.insertText(", Verb(VRB)", reset)
+            cursor.insertText(", Adjective(ADJ)", reset)
+            cursor.insertText(", Adverb(ADV)", reset)
+            cursor.insertText(", Unknown(UNK)\n\n", reset)
+            """
             for word in words:
-                # added unique color based on word type
                 fmt = self.selector(word)
-                reset = QTextCharFormat()
-                reset.setForeground(QColor("black"))
-                reset.setBackground(QColor("white"))
                 if word in self.lemma_pos:
                     cursor.insertText(word, fmt)
                     cursor.insertText(" ", reset)
                 else:
                     cursor.insertText(word + " ", reset)
             cursor.insertText(" ", reset)
+            
     
     # changes the highlight formatting based on word type
     def selector(self, word):
         fmt = QTextCharFormat()
         if word.endswith("(NN)"):
-            fmt.setForeground(QColor("white")) 
-            fmt.setBackground(QColor("red"))
+            fmt.setForeground(QColor("black")) 
+            fmt.setBackground(QColor("#fb6962"))
         elif word.endswith("(VRB)"):
-            fmt.setForeground(QColor("white")) 
-            fmt.setBackground(QColor("blue"))
+            fmt.setForeground(QColor("black")) 
+            fmt.setBackground(QColor("#a9def9"))
         elif word.endswith("(ADJ)"):
-            fmt.setForeground(QColor("white")) 
-            fmt.setBackground(QColor("#1f6663"))
+            fmt.setForeground(QColor("black")) 
+            fmt.setBackground(QColor("#79de79"))
         elif word.endswith("(ADV)"):
             fmt.setForeground(QColor("white")) 
-            fmt.setBackground(QColor("orange"))
+            fmt.setBackground(QColor("#fcfc99"))
         elif word.endswith("(UNK)"):
             fmt.setForeground(QColor("white")) 
             fmt.setBackground(QColor("gray"))
@@ -530,13 +540,13 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             token_entry = {
                 "word": entry["word"],
                 "lemma": entry["lemma"],
-                "pos": entry["pos"],
+                "part-of-speech": entry["pos"],
                 "tag": entry["tag"],
-                "morph": {"head":entry["morph"]["head"], 
+                "morphemes": {"root":entry["morph"]["root"], 
                           "prefix":entry["morph"]["prefix"],
                           "infix":entry["morph"]["infix"], 
                           "suffix":entry["morph"]["suffix"], 
-                          "dedupli":entry["morph"]["dedupli"] }
+                          "repeat":entry["morph"]["dedupli"] },
             }
             restructured_data.append(token_entry)
         return restructured_data
@@ -652,10 +662,16 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             text = file.read()
         return text
     
+    def compact_morph_fields(data):
+        for item in data:
+            if 'morph' in item:
+                item['morph'] = json.loads(json.dumps(item['morph'], separators=(',', ':')))
+        return data
+
     def save_json(self):
         # Open a file dialog to choose save location
         today_date = datetime.now().strftime("%Y-%m-%d")
-        default_file_name = "TALA_" + today_date + "_Tagalog_InflectionToLemma_Annotation"
+        default_file_name = "TALA_" + today_date + "_Tagalog_Annotation"
         
         file_path, _ = QFileDialog.getSaveFileName(
             self, "Save JSON File", default_file_name, "JSON Files (*.json);;All Files (*)")
@@ -684,13 +700,13 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         if self.mode == 1:
             temp = json.dumps(self.annotation, indent=4)
             self.annotationTable.setPlainText(temp)
-            self.annotation_mode.setText("Annotation")
-            self.annotation_mode.setStyleSheet("background: white; color: black;")
+            self.annotation_mode.setText("Switch to Morphological Parsing")
+            self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")
             
         elif self.mode == 0:
             temp = json.dumps(self.parser, indent=4)
             self.annotationTable.setPlainText(temp)
-            self.annotation_mode.setText("Parsed")
+            self.annotation_mode.setText("Swtich to Lemma-Inflection Pair")
             self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")
         
     
