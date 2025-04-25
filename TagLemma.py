@@ -984,7 +984,7 @@ class TagLemma:
                         
                         if self.isVerbLemma(token) or self.isAdjectiveLemma(token) or self.isAdverbLemma(token):
                             potential_lemmas = self.get_potential_lemmas(token, morpheme, "NOUN")
-                            pos_val = self.pos_val_for_par 
+                            pos_val = "(NN)" 
                         else:
                             potential_lemmas = self.get_potential_lemmas(token, morpheme, "ALL")
                             isInlfected = 1

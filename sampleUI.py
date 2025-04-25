@@ -214,7 +214,7 @@ class Ui_MainWindow(object):
         self.exportBtn.setText(_translate("MainWindow", "Export"))
         self.comboBox.setItemText(0, _translate("MainWindow", "Lemmatized Words Only"))
         self.comboBox.setItemText(1, _translate("MainWindow", "Include Unprocessed Words"))
-        self.comboBox.setItemText(2, _translate("MainWindow", "Include POS Tags"))
+        self.comboBox.setItemText(2, _translate("MainWindow", "Include POS Tags + Meaning"))
         self.lemmatizeBtn.setText(_translate("MainWindow", "Lemmatize"))
         self.clearBtn.setText(_translate("MainWindow", "Clear"))
         self.label.setText(_translate("MainWindow", "Validation"))

@@ -8,14 +8,40 @@ import TagLemma
 import re
 
 class PopupWindow(QMainWindow):
-    def __init__(self, parent, message):
-        super().__init__(parent)  # Pass parent to the base class
-        self.setWindowTitle("Popup")
+    def __init__(self, parent, lemma, pos, definition):
+        super().__init__(parent)
+        self.setWindowTitle("Meaning")
+
+        # Styled Lemma (green background)
+        lemma_label = QLabel(f"Lemma: {lemma}")
+        lemma_label.setStyleSheet("""
+            background-color: #1f6663;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            padding: 10px;
+            border-radius: 8px;
+        """)
+
+        # POS and Definition (white background)
+        details_label = QLabel(f"Part of Speech: {pos}\nDefinition: {definition}")
+        details_label.setStyleSheet("""
+            background-color: white;
+            color: black;
+            font-size: 18px;
+            padding: 10px;
+            border-radius: 8px;
+        """)
+
         layout = QVBoxLayout()
-        layout.addWidget(QLabel(message))
+        layout.addWidget(lemma_label)
+        layout.addWidget(details_label)
+
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        
         
 
 class ClickableTextEdit(QTextEdit):
@@ -82,19 +108,24 @@ class ClickableTextEdit(QTextEdit):
       
 
         link_text = link_text.strip().split()[-1]
-        print(link_text)
         
         truncate = link_text[:link_text.find("(")]
         content = self.find(truncate)
         
         
         # Pass the current window as the parent to the PopupWindow
-        self.popup = PopupWindow(self, f"Lemma: {content['lemma']}\nPart of speech: {content['part-of-speech']}\nDefinition: {content['definition']}")
-        self.popup.show()
-        frame_geometry = self.popup.frameGeometry()
-        screen_center = QApplication.primaryScreen().availableGeometry().center()
-        frame_geometry.moveCenter(screen_center)
-        self.popup.move(frame_geometry.topLeft())
+        try:
+            lemma = content['lemma']
+            pos = content['part-of-speech']
+            definition = content['definition']
+            self.popup = PopupWindow(self, lemma, pos, definition)
+            self.popup.show()
+            frame_geometry = self.popup.frameGeometry()
+            screen_center = QApplication.primaryScreen().availableGeometry().center()
+            frame_geometry.moveCenter(screen_center)
+            self.popup.move(frame_geometry.topLeft())
+        except:
+            print("uh oh")
 
 
     def find(self, text):
@@ -111,20 +142,15 @@ class ClickableTextEdit(QTextEdit):
         
         if text.endswith("(NN)"):
             cursor.insertHtml(f"<p><a href='{href}' style='background: #fb6962; color: black; text-decoration: none;'>{text}</a> </p>")
-            cursor.insertText(" ")
         elif text.endswith("(VRB)"):
             cursor.insertHtml(f"<p><a href='{href}' style='background: #a9def9; color: black; text-decoration: none;'>{text}</a> </p>")
-            cursor.insertText(" ")
         elif text.endswith("(ADJ)"):
             cursor.insertHtml(f"<p><a href='{href}' style='background: #79de79; color: black; text-decoration: none;'>{text}</a> </p>")
-            cursor.insertText(" ")
         elif text.endswith("(ADV)"):
             cursor.insertHtml(f"<p><a href='{href}' style='background: #fcfc99; color: black; text-decoration: none;'>{text}</a> </p>")
-            cursor.insertText(" ")
         elif text.endswith("(UNK)"):
             cursor.insertHtml(f"<p><a href='{href}' style='background: gray; color: black; text-decoration: none;'>{text}</a> </p>")
-            cursor.insertText(" ")
+
         else:
             cursor.insertHtml(f"<p>{text} </p>")
-            cursor.insertText(" ")
 

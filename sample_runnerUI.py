@@ -329,6 +329,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     # this set the behavior of the results using the combobox
     def combo_box_changed(self, i):
         if i == 0:
+            self.resultText.clear()
             if not self.valid_result:
                 self.resultText.setPlainText("No Valid Text to Lemmatize.")
                 return
