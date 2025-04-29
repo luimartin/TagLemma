@@ -11,6 +11,7 @@ import fitz
 import docx
 import json
 import time
+import re
 from tabulate import tabulate
 
 from fuzzymodule import Dialog
@@ -50,7 +51,6 @@ class LemmatizeThread(QThread):
 
         start = time.perf_counter()
         result, lemmas,  self.lemma_obj, pos_output, lemma_pos = self.t.lemmatize_no_print(self.text)
-        print(pos_output)
         end = time.perf_counter()
         print(f"Time Elapsed: {end - start}")
 
@@ -62,6 +62,7 @@ class LemmatizeThread(QThread):
         exclude_invalid = self.t.exclude_invalid()
         annotation = self.t.show_annotation()
         source_to_target = self.t.source_to_target
+        self.mode = 0
 
         # To be send to the main UI sadhkjasdhas
         self.finished.emit(result, valid_tokens, lemmas,
@@ -334,6 +335,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 self.resultText.setPlainText("No Valid Text to Lemmatize.")
                 return
             self.resultText.setPlainText(self.valid_result) 
+            self.mode = 0
             
         elif i == 1:
             words = self.result.split()
@@ -352,6 +354,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 else:
                     cursor.insertText(word + " ", reset)
             cursor.insertText(" ", reset)
+            self.mode = 1
             #self.resultText.setPlainText(self.result)
         
         # new item in drop down list to display POS tagging feature
@@ -359,8 +362,10 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             words = self.pos_output
             self.resultText.clear()
             self.resultText.set_parser(self.parser)
+            self.resultText.insertPlainText("Legend: NN(Noun/Pangngalan), VRB(Verb/Pandiwa), ADJ(Adjective/Pang-uri),\nADV(Adverb/Pang-abay), UNK(Unknown)\n")
             for index, word in enumerate(words):
-                self.resultText.append_link(f"link{index}", word)
+                self.resultText.append_link(f"link {index}", word)
+            self.mode = 2
         
 
     # sets the maximum char count for the input of words
@@ -557,18 +562,109 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             try:
                 # initiate pdf class
                 page = pdf.PDF()
-                # printing process
-                page.add_list("Input:")
-                page.add_list(self.inputText.toPlainText())
+                print(bool(re.search(r'\d', self.inputText.toPlainText())))
+                if bool(re.search(r'\d', self.resultText.toPlainText())):
+                    # printing process
+                    page.add_list("Result")
+                    user_input = self.inputText.toPlainText()
+                    system_output = self.resultText.toPlainText()
+                    list_one = re.split(r'\d+', user_input)
+                    list_two = re.split(r'\d+', system_output)
 
-                page.add_list("")
-                page.add_list("")
-                page.add_list("Output:")
-                page.add_list(self.resultText.toPlainText())
-                # Generate and save the PDF at the chosen location
-                page.output(file_path)
-                self.message_dialog(QMessageBox.Icon.Information,
+                    index = 1
+                    for item in range(len(list_one) - 1):
+                        page.add_list(f"input: {index} " + list_one[index])
+                        page.add_list(f"output: {index} " + list_two[index])
+                        index += 1
+                    index = 0
+
+                    page.add_list("")
+                    page.add_list("")
+                    page.add_list(list_two[0])
+
+                    if self.mode == 2:
+                        page.insert_page()
+                        page.add_list("Dictionary:")
+                        html = """
+                        <table width="100%" border="1" cellspacing="0" cellpadding="4">
+                        <thead>
+                            <tr style="background-color: #f2f2f2; border-bottom: 1px solid black;">
+                            <th align="left" width="5%">#</th>
+                            <th align="left" width="8%">Word</th>
+                            <th align="left" width="8%">Lemma</th>
+                            <th align="left" width="8%">Part of Speech</th>
+                            <th align="left" width="12%">Definition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        """
+
+                        for index, item in enumerate(self.parser):
+                            html += f"""
+                            <tr style="background-color: #f2f2f2; border-bottom: 1px solid black;">
+                            <td>{index + 1}</td>
+                            <td>{item['word']}</td>
+                            <td>{item['lemma']}</td>
+                            <td>{item['part-of-speech']}</td>
+                            <td>{item['definition']}</td>
+                            </tr>
+                            """
+
+                        html += """
+                        </tbody>
+                        </table>
+                        """
+                        page.add_table(html)
+                        # Generate and save the PDF at the chosen location
+                        page.output(file_path)
+                        self.message_dialog(QMessageBox.Icon.Information,
                                     f"File saved successfully: {file_path}", "Success")
+                else:
+                        # printing process
+                        page.add_list("Input:")
+                        page.add_list(self.inputText.toPlainText())
+
+                        page.add_list("")
+                        page.add_list("")
+                        page.add_list("Output:")
+                        page.add_list(self.resultText.toPlainText())
+                        if self.mode == 2:
+                            page.insert_page()
+                            page.add_list("Dictionary:")
+                            html = """
+                            <table width="100%" border="1" cellspacing="0" cellpadding="4">
+                            <thead>
+                                <tr style="background-color: #f2f2f2; border-bottom: 1px solid black;">
+                                <th align="left" width="5%">#</th>
+                                <th align="left" width="8%">Word</th>
+                                <th align="left" width="8%">Lemma</th>
+                                <th align="left" width="8%">Part of Speech</th>
+                                <th align="left" width="12%">Definition</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            """
+
+                            for index, item in enumerate(self.parser):
+                                html += f"""
+                                <tr style="background-color: #f2f2f2; border-bottom: 1px solid black;">
+                                <td>{index + 1}</td>
+                                <td>{item['word']}</td>
+                                <td>{item['lemma']}</td>
+                                <td>{item['part-of-speech']}</td>
+                                <td>{item['definition']}</td>
+                                </tr>
+                                """
+
+                            html += """
+                            </tbody>
+                            </table>
+                            """
+                            page.add_table(html)
+                        # Generate and save the PDF at the chosen location
+                        page.output(file_path)
+                        self.message_dialog(QMessageBox.Icon.Information,
+                                            f"File saved successfully: {file_path}", "Success")
             except Exception as e:
                 print(e)
                 self.message_dialog(QMessageBox.Icon.Warning,

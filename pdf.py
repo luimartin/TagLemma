@@ -7,6 +7,7 @@ class PDF(FPDF):
         super().__init__(orientation, unit, format)
         self.set_auto_page_break(auto=True, margin=15)
         self.add_font('NotoSans', '', 'assets/NotoSans.ttf')
+        self.add_font('notosans', 'B', 'assets/NotoSans.ttf', uni=True)
         self.set_font("NotoSans", size=11)
         self.add_page()
         # Ensure the font is added before using it
@@ -20,6 +21,12 @@ class PDF(FPDF):
     def add_list(self, items):
         # Add the list of items to the PDF
         self.multi_cell(0, 7, f"{items}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+    def insert_page(self):
+        self.add_page()
+
+    def add_table(self, html):
+        self.write_html(html)
 
     def footer(self):
         # Set position of the footer

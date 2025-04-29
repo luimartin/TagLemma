@@ -1027,8 +1027,6 @@ class TagLemma:
                         self.lemma_pos.append(final_best_lemma)
 
                     else:
-                        # Adding Parser here in this very moment, to have application
-                        morpheme = self.get_morpheme_of_inf(token)
 
                         self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)", self.get_definition(token), 1.00)
 

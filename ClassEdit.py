@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QApplication, QTextEdit, QMainWindow, QLabel, QVBoxLayout, QWidget
+    QApplication, QTextEdit, QMainWindow, QLabel, QVBoxLayout, QWidget, QHBoxLayout
 )
 from PyQt6.QtGui import QTextCursor, QCursor, QColor
 from PyQt6.QtCore import Qt, QUrl
@@ -8,11 +8,43 @@ import TagLemma
 import re
 
 class PopupWindow(QMainWindow):
-    def __init__(self, parent, lemma, pos, definition):
+    def __init__(self, parent, lemma, pos, definition, input_word):
         super().__init__(parent)
         self.setWindowTitle("Meaning")
 
-        # Styled Lemma (green background)
+        
+         # LEFT side: Input Word (green) + Blank (white)
+        input_word_label = QLabel(f"Word: {input_word}")
+        input_word_label.setStyleSheet("""
+            background-color: #1f6663;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            padding: 10px;
+            border: 2px solid white;                           
+            border-radius: 8px;
+        """)
+
+        blank_label = QLabel("___________\n___________")
+        blank_label.setStyleSheet("""
+            background-color: white;
+            color: white;
+            font-size: 18px;
+            padding: 10px;
+            border: 2px solid white;       
+            border-radius: 8px;
+        """)
+
+
+        left_layout = QVBoxLayout()
+        left_layout.addWidget(input_word_label)
+        left_layout.addWidget(blank_label)
+
+
+        left_container = QWidget()
+        left_container.setLayout(left_layout)
+
+        # RIGHT side: Lemma (green) + Details (white)
         lemma_label = QLabel(f"Lemma: {lemma}")
         lemma_label.setStyleSheet("""
             background-color: #1f6663;
@@ -20,26 +52,38 @@ class PopupWindow(QMainWindow):
             font-weight: bold;
             font-size: 24px;
             padding: 10px;
+            border: 2px solid white;       
             border-radius: 8px;
         """)
 
-        # POS and Definition (white background)
         details_label = QLabel(f"Part of Speech: {pos}\nDefinition: {definition}")
         details_label.setStyleSheet("""
             background-color: white;
             color: black;
             font-size: 18px;
             padding: 10px;
+            border: 2px solid white;       
             border-radius: 8px;
         """)
 
-        layout = QVBoxLayout()
-        layout.addWidget(lemma_label)
-        layout.addWidget(details_label)
+        right_layout = QVBoxLayout()
+        right_layout.addWidget(lemma_label)
+        right_layout.addWidget(details_label)
 
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
+        right_container = QWidget()
+        right_container.setLayout(right_layout)
+
+        # Combine LEFT and RIGHT horizontally
+        horizontal_layout = QHBoxLayout()
+        horizontal_layout.addWidget(left_container)
+        horizontal_layout.addWidget(right_container)
+
+        # Final container
+        main_widget = QWidget()
+        main_widget.setLayout(horizontal_layout)
+        self.setCentralWidget(main_widget)
+
+        # Make popup modal
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         
         
@@ -118,7 +162,8 @@ class ClickableTextEdit(QTextEdit):
             lemma = content['lemma']
             pos = content['part-of-speech']
             definition = content['definition']
-            self.popup = PopupWindow(self, lemma, pos, definition)
+            input_word = content['word']
+            self.popup = PopupWindow(self, lemma, pos, definition, input_word)
             self.popup.show()
             frame_geometry = self.popup.frameGeometry()
             screen_center = QApplication.primaryScreen().availableGeometry().center()
@@ -150,7 +195,8 @@ class ClickableTextEdit(QTextEdit):
             cursor.insertHtml(f"<p><a href='{href}' style='background: #fcfc99; color: black; text-decoration: none;'>{text}</a> </p>")
         elif text.endswith("(UNK)"):
             cursor.insertHtml(f"<p><a href='{href}' style='background: gray; color: black; text-decoration: none;'>{text}</a> </p>")
-
         else:
+            if text.isdigit():
+                return cursor.insertHtml(f"<p><br>{text} </p>")
             cursor.insertHtml(f"<p>{text} </p>")
 
