@@ -164,6 +164,7 @@ agad-agad
 agag
 agar
 agarang
+agaran
 agawin
 agham
 agila

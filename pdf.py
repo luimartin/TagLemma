@@ -33,7 +33,7 @@ class PDF(FPDF):
         self.set_y(-15)
         self.set_font("helvetica", style="I", size=11)
         self.set_text_color(169, 169, 169)  # Set font color to grey
-        current_date = datetime.now().strftime("%m/%d/%Y")
+        current_date = datetime.now().strftime("%m/%d/%Y %I:%M %p")
         self.cell(0, 10, f"Date Generated: {current_date}", align="L")
         self.cell(0, 10, f"Page {self.page_no()}", align="C")
 

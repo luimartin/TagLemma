@@ -419,6 +419,7 @@ def get_morpheme(token):
 		AFFIXES["infix"]  = INFIX
 		AFFIXES["suffix"] = SUFFIX
 		AFFIXES["dedupli"] = REPITITION
+		print("SUCESS", cle_stem)
 
 
 		PREFIX = []
@@ -435,6 +436,7 @@ def get_morpheme(token):
 		AFFIXES["infix"]  = '[]'
 		AFFIXES["suffix"] = '[]'
 		AFFIXES["dedupli"] = '[]'
+		print("FAILED", token)
 
 	return cle_stem, AFFIXES
 
