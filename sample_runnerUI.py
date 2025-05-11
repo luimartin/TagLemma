@@ -329,25 +329,25 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     # this set the behavior of the results using the combobox
     def combo_box_changed(self, i):
+        cursor = self.resultText.textCursor()
+        fmt = QTextCharFormat()
+        fmt.setForeground(QColor("white")) 
+        fmt.setBackground(QColor("#1f6663"))
+        reset = QTextCharFormat()
+        reset.setForeground(QColor("black"))
+        reset.setBackground(QColor("white"))
         if i == 0:
             self.resultText.clear()
             if not self.valid_result:
                 self.resultText.setPlainText("No Valid Text to Lemmatize.")
                 return
-            self.resultText.setPlainText(self.valid_result) 
+            cursor.insertText(self.valid_result, reset)
             self.mode = 0
             
         elif i == 1:
             words = self.result.split()
-            cursor = self.resultText.textCursor()
             self.resultText.clear()
             for word in words:
-                fmt = QTextCharFormat()
-                fmt.setForeground(QColor("white")) 
-                fmt.setBackground(QColor("#1f6663"))
-                reset = QTextCharFormat()
-                reset.setForeground(QColor("black"))
-                reset.setBackground(QColor("white"))
                 if word in self.valid_result.split():
                     cursor.insertText(word, fmt)
                     cursor.insertText(" ", reset)
