@@ -165,6 +165,7 @@ agad-agad
 agag
 agar
 agarang
+agaran
 agawin
 agham
 agila
@@ -376,7 +377,6 @@ ananias
 anas
 anat
 anatot
-and
 andres
 andronico
 anem
@@ -13763,7 +13763,6 @@ obot
 obsebahan
 obserbahan
 oded
-of
 ofel
 officers
 ofir
@@ -16593,6 +16592,7 @@ pinakamarumi
 pinakamasama
 pinakamasamang
 pinakamasarap
+sarap
 pinakamasasarap
 pinakamasayang
 pinakamataas
@@ -17065,6 +17065,7 @@ pitumpu
 pitumpung
 pitung
 plaka
+pinakamakapangyarihan
 planeta
 plano
 planong
@@ -18872,6 +18873,7 @@ tagapagtala
 tagapagtanggol
 tagapagtayo
 tagapagtinda
+tindahan
 tagapagturo
 tagapagturong
 tagapagwasak
@@ -19245,6 +19247,7 @@ tibok
 ticio
 tifsa
 tig
+telebisyon
 tig-aanim
 tig-iisang
 tig-pipito

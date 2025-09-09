@@ -5,6 +5,9 @@ import math
 import re
 import inf_morph_stripping as ms
 from functools import lru_cache
+import json
+
+#  pos_output, lemma_obj
 
 class TagLemma:
     def __init__(self):
@@ -68,7 +71,17 @@ class TagLemma:
         ]
 
         self.dframe = None
+        self.noun_dframe = None
+        self.verb_dframe = None
+        self.adj_dframe = None
+        self.adv_dframe = None
+
         self.raw_lemmas = None
+        self.noun_lemmas = None
+        self.verb_lemmas = None
+        self.adj_lemmas = None
+        self.adv_lemmas = None
+
         self.lemma_size = None
         self.formal_words = None
         self.found_stop_words = None
@@ -85,6 +98,16 @@ class TagLemma:
         self.invalid_tokens = None  # forda UI
         self.lemma = []  # forda UI
         self.annotated_lemma = {}
+    
+
+        # PARSING for APPLICARTION
+        self.parser = []
+        self.affixes_for_par = {}
+        self.pos_val_for_par = None
+        self.pos_output = [] # With Part of Speech Tag
+        self.lemma_pos = []
+        self.lemma_def = None
+
         self.curr_token = None
         self.input, self.result = '', ''
 
@@ -96,14 +119,52 @@ class TagLemma:
 
         self.dframe = pd.DataFrame(lines, columns=['WORDS'])
 
-        self.raw_lemmas = self.dframe 
+        self.raw_lemmas = self.dframe
         self.lemma_size = self.dframe.shape[0]
+
+    def load_noun_lemma(self, file_path):
+        with open(file_path, 'r') as file:
+            lines = [line.strip() for line in file]
+
+        self.noun_dframe = pd.DataFrame(lines, columns=['WORDS'])
+
+        self.noun_lemmas = self.noun_dframe
+
+    def load_verb_lemma(self, file_path):
+        with open(file_path, 'r') as file:
+            lines = [line.strip() for line in file]
+
+        self.verb_dframe = pd.DataFrame(lines, columns=['WORDS'])
+
+        self.verb_lemmas = self.verb_dframe
+
+    def load_adj_lemma(self, file_path):
+        with open(file_path, 'r') as file:
+            lines = [line.strip() for line in file]
+
+        self.adj_dframe = pd.DataFrame(lines, columns=['WORDS'])
+
+        self.adj_lemmas = self.adj_dframe
+
+    def load_adverb_lemma(self, file_path):
+        with open(file_path, 'r') as file:
+            lines = [line.strip() for line in file]
+
+        self.adv_dframe = pd.DataFrame(lines, columns=['WORDS'])
+
+        self.adv_lemmas = self.adv_dframe
+
 
     def load_formal_tagalog(self, file_path):
         with open(file_path, 'r') as file:
             file_contents = file.read()
 
         self.formal_words = file_contents.split()
+
+    def load_def(self, json_file):
+        with open(json_file, 'r', encoding='utf-8') as f:
+            self.lemma_def = json.load(f)
+    
 
     # =======================MAIN ARCHITECTURE HERE=======================
 
@@ -144,7 +205,31 @@ class TagLemma:
     # You know, to Avoid Unecessary Further Procedure and Reduce Search Space Complexity
     @lru_cache(maxsize=None)
     def isLemmaAlready(self, token):
-        if token in self.raw_lemmas['WORDS'].values:
+        if token in self.noun_lemmas['WORDS'].values:
+            return True
+
+        return False
+
+    @lru_cache(maxsize=None)
+    def isVerbLemma(self, token):
+        if token in self.verb_lemmas['WORDS'].values:
+            self.pos_val_for_par =  "(VRB)"
+            return True
+
+        return False
+    
+    @lru_cache(maxsize=None)
+    def isAdjectiveLemma(self, token):
+        if token in self.adj_lemmas['WORDS'].values:
+            self.pos_val_for_par =  "(ADJ)"
+            return True
+
+        return False
+    
+    @lru_cache(maxsize=None)
+    def isAdverbLemma(self, token):
+        if token in self.adv_lemmas['WORDS'].values:
+            self.pos_val_for_par =  "(ADV)"
             return True
 
         return False
@@ -220,7 +305,7 @@ class TagLemma:
         return morpheme_word
 
     def get_morpheme_of_inf(self, token):
-        self.morpheme = ms.get_morpheme(token)
+        self.morpheme, self.affixes_for_par = ms.get_morpheme(token)
         self.list_of_morphemes.append(self.morpheme)
         return self.morpheme
 
@@ -252,8 +337,13 @@ class TagLemma:
         return bool(re.search(combined_regex_pattern, word))
 
     @lru_cache(maxsize=None)
-    def get_potential_lemmas(self, token, morpheme):
-        filtered_lemmas = self.raw_lemmas[self.raw_lemmas['WORDS'].str.len() <= len(token)]
+    def get_potential_lemmas(self, token, morpheme, lemma_type):
+        if lemma_type == "NOUN":
+            filtered_lemmas = self.noun_lemmas[self.noun_lemmas['WORDS'].str.len() <= len(token)]
+        
+        if lemma_type == "ALL":
+            filtered_lemmas = self.raw_lemmas[self.raw_lemmas['WORDS'].str.len() <= len(token)]
+
         potential_lemmas = filtered_lemmas[filtered_lemmas['WORDS'].apply(lambda x: self.reduce_search_space(x, morpheme))]
         
         return potential_lemmas
@@ -451,9 +541,9 @@ class TagLemma:
                     return sorted_lemmas.iloc[0]['WORDS'], sorted_lemmas
 
             # If token is NOT already a lemma, return the full sorted list without filtering
-            return sorted_lemmas.iloc[0]['WORDS'], sorted_lemmas
+            return sorted_lemmas.iloc[0]['WORDS'], sorted_lemmas, round(sorted_lemmas.iloc[0]['Rank Scores'], 2)
 
-        return self.curr_token, potential_lemmas  # If empty, return original token and empty lemmas
+        return self.curr_token, potential_lemmas, 0.0 # If empty, return original token and empty lemmas
 
     def annotate(self, inf_input, lemm_output):
         if inf_input == lemm_output:
@@ -465,9 +555,23 @@ class TagLemma:
         else:
             self.annotated_lemma[lemm_output] = [inf_input]
 
-    def show_annotation(self):
-        return self.annotated_lemma
 
+    # For Application right here, not just annotation, but parser
+    def parsing(self, token, lemma, affixes, pos, tag, definition, morph_sim):
+        token_entry = {
+            "word" : token,
+            "lemma" : lemma,
+            "pos": pos,
+            "tag" : tag,
+            "morph" : affixes,
+            "definition" : definition,
+            "morph_sim": morph_sim
+        }
+        self.parser.append(token_entry)
+
+    def show_annotation(self):
+        return [self.annotated_lemma, self.parser]
+    
     def show_inflection_and_morpheme(self):
         temp = []
         seen_tokens = set()  # To track already processed tokens
@@ -669,7 +773,21 @@ class TagLemma:
 
     def show_lemma_ranking(self, lemmatizable_token):
         return self.lemma_ranking_list.get(lemmatizable_token, "Lemma not found")
-            
+    
+    def find_pos_val(self, lemma):
+        word = lemma.strip().lower()
+
+        if word in self.verb_lemmas['WORDS'].values:
+            return "(VRB)"
+        elif word in self.adj_lemmas['WORDS'].values:
+            return "(ADJ)"
+        elif word in self.adv_lemmas['WORDS'].values:
+            return "(ADV)"
+        elif word in self.noun_lemmas['WORDS'].values:
+            return "(NN)"
+        else:
+            return "(UNK)"  # Unknown word
+                
    # =======================MAIN PROCESS OF LEMMATIZATION=======================
 
     def lemmatize(self, input_text):
@@ -783,6 +901,50 @@ class TagLemma:
         self.result_removed_sw = self.remove_stop_words(self.lemmatized_text)
         #self.lemmatized_text = []
 
+    def pos_tag_name(self, tag):
+        tag_map = {
+            "(NN)": "Noun",
+            "(VRB)": "Verb",
+            "(ADJ)": "Adjective",
+            "(ADV)": "Adverb"
+        }
+        return tag_map.get(tag, "Unknown")
+
+    def get_definition(self, word):
+        for entry in self.lemma_def:
+            if entry["word"].lower() == word.lower():
+                return entry["definition"]
+         
+        return "Definition not found."
+    
+    def determine_focus(self, affixes_morph):
+        # Extract affix lists
+        prefix = affixes_morph.get('prefix', [])
+        infix = affixes_morph.get('infix', [])
+        suffix = affixes_morph.get('suffix', [])
+        
+        # Combine all affixes for simplified checking
+        all_affixes = prefix + infix + suffix
+
+        # Mapping affix patterns to focus types
+        if any(a in ['um', 'mag', 'ma', 'mang'] for a in all_affixes) or 'um' in infix:
+            return 'Actor'
+        elif any(a in ['in','an', 'i', 'ipa', 'ni'] for a in all_affixes):
+            return 'Object'
+        elif any(a in ['an'] for a in suffix):
+            return 'Locative'
+        elif any(a in ['ipag'] for a in all_affixes):
+            return 'Benefactive'
+        elif any(a in ['ipang'] for a in all_affixes):
+            return 'Instrumental'
+        elif any(a in ['ika'] for a in all_affixes):
+            return 'Reason'
+        elif any(a in ['pa', 'pina'] for a in prefix):
+            # Special case: 'pa-' often forms imperative or causative, not always voice-specific
+            return 'Causative'
+        else:
+            return 'Non-Verb'
+
     @lru_cache(maxsize=None)
     def lemmatize_no_print(self, input_text):
 
@@ -799,21 +961,33 @@ class TagLemma:
             # Lemmatized Each Tokens and Return the Lemma after
             # print("About to lemmatize: ", self.to_lemmatize_tokens, "\n")
             for token in self.to_lemmatize_tokens:
+                
                 inf_input = token
+                
                 if self.to_lemmatize_tokens.index(token) not in self.not_to_lemmatize_tokens_index:
+                    # Base Variable for POS Tagging
+                    pos_val = ""
+                    isInlfected = 0
 
                     # The Current Token Should not be in Lemma Form in Order to Lemmatize
-                    if True:
+                    if not self.isLemmaAlready(token):
                         # Base variable for handling token
                         self.curr_token = token
+                        final_best_lemma = ""
+                        
 
                         self.list_of_lemmatizable_tokens.append(token)
 
                         # Pre-processing Stage
+                        
                         morpheme = self.get_morpheme_of_inf(token)
                         
-                        potential_lemmas = self.get_potential_lemmas(
-                            token, morpheme)
+                        if self.isVerbLemma(token) or self.isAdjectiveLemma(token) or self.isAdverbLemma(token):
+                            potential_lemmas = self.get_potential_lemmas(token, morpheme, "NOUN")
+                            pos_val = "(NN)" 
+                        else:
+                            potential_lemmas = self.get_potential_lemmas(token, morpheme, "ALL")
+                            isInlfected = 1
 
                         # Whenever there are no potential lemmas found, append the normal token instead
                         if potential_lemmas.empty:
@@ -831,21 +1005,42 @@ class TagLemma:
                         fuzzy_potential_lemmas = self.fuzzy_matching(
                             temp_token, potential_lemmas)
                         
-                        best_lemma, temp_fp_lemmas = self.show_best_lemma(
+                        best_lemma, temp_fp_lemmas, lemma_score = self.show_best_lemma(
                             fuzzy_potential_lemmas)
                         
                         self.store_lemma_ranking_in_dict(token, temp_fp_lemmas)
                             
                         self.create_source_to_target(token, best_lemma)
-                        #self.show_cosine_similarity(token, best_lemma)
+                        self.annotate(inf_input, best_lemma)
+
+                        # Adding POS Tag here in this very moment, to have application
+                        if isInlfected:
+                            pos_val = self.find_pos_val(best_lemma)
+                        final_best_lemma = best_lemma + pos_val 
+
+                        # Adding Parser here in this very moment, to have application
+                        self.parsing(self.curr_token, best_lemma, self.affixes_for_par, self.pos_tag_name(pos_val), pos_val, self.get_definition(best_lemma), lemma_score)
+
                         self.lemmatized_text.append(best_lemma)
                         self.lemma.append(best_lemma)
-                        self.annotate(inf_input, best_lemma)
+                        self.pos_output.append(final_best_lemma)
+                        self.lemma_pos.append(final_best_lemma)
+
                     else:
+
+                        self.parsing(token, token, self.affixes_for_par, self.pos_tag_name("(NN)"), "(NN)", self.get_definition(token), 1.00)
+
                         self.lemmatized_text.append(token)
+                        self.lemma.append(token)
+
+                        token = token + "(NN)"
+                        self.pos_output.append(token)
+                        self.lemma_pos.append(token)
 
                 else:
                     self.lemmatized_text.append(token)
+                    self.pos_output.append(token)
+
 
             break
         temp = ''
@@ -857,7 +1052,7 @@ class TagLemma:
         self.result_removed_sw = self.remove_stop_words(self.lemmatized_text)
         # self.lemmatized_text = []
 
-        return (self.result, self.lemma, self)
+        return (self.result, self.lemma, self, self.pos_output, self.lemma_pos)
 
     def exclude_invalid(self):
         result = []
@@ -868,10 +1063,18 @@ class TagLemma:
 
 if __name__ == "__main__":
     t = TagLemma()
-    str_input = "kumakain kumakain tumakbo tumakbo"
+    str_input = "kumakain ako ng pagkain habang pinanonood ang palabas"
     t.load_lemma_to_dfame('dataset/tagalog_lemmas.txt')
+    t.load_noun_lemma('dataset/tagalog_nouns.txt')
+    t.load_verb_lemma('dataset/tagalog_verbs.txt')  
+    t.load_adj_lemma('dataset/tagalog_adjectives.txt')
+    t.load_adverb_lemma('dataset/tagalog_adverbs.txt')
     t.load_formal_tagalog('dataset/formal_tagalog.txt')
-    t.lemmatize(str_input)
+    t.load_def("dataset/tagalog_dictionary.json")
+
+    t.lemmatize_no_print(str_input)
+    print(t.parser)
+
     #print(t.show_annotation())
     #print(t.show_inflection_and_morpheme())
     #print(t.result_removed_sw)

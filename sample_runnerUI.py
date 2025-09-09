@@ -1,7 +1,7 @@
 from sampleUI import Ui_MainWindow
 from PyQt6.QtWidgets import QMainWindow, QApplication, QMessageBox, QSizePolicy, QFileDialog, QProgressDialog, QLabel, QComboBox, QSpacerItem, QPushButton, QHBoxLayout, QButtonGroup
 from PyQt6.QtCore import QThread, pyqtSignal, Qt, QCoreApplication, QSize
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtGui import QIcon, QPixmap, QColor, QTextCharFormat
 from PyQt6 import QtGui, QtCore
 from datetime import datetime
 import sys
@@ -11,6 +11,7 @@ import fitz
 import docx
 import json
 import time
+import re
 from tabulate import tabulate
 
 from fuzzymodule import Dialog
@@ -31,7 +32,7 @@ class LemmatizeThread(QThread):
     # Signal to send the result back to the main thread
     # update this shit if u want to add the variable to be send to the UI
     finished = pyqtSignal(str, list, list, list, list,
-                          list, list, list, dict, dict, object)
+                          list, list, list, list, dict, object, list, list)
 
     def __init__(self, text):
         super().__init__()
@@ -41,10 +42,15 @@ class LemmatizeThread(QThread):
     def run(self):
         self.t = TagLemma.TagLemma() 
         self.t.load_lemma_to_dfame('dataset/tagalog_lemmas.txt')
+        self.t.load_noun_lemma('dataset/tagalog_nouns.txt')
+        self.t.load_verb_lemma('dataset/tagalog_verbs.txt')
+        self.t.load_adj_lemma('dataset/tagalog_adjectives.txt')
+        self.t.load_adverb_lemma('dataset/tagalog_adverbs.txt')
         self.t.load_formal_tagalog('dataset/formal_tagalog.txt')
+        self.t.load_def('dataset/tagalog_dictionary.json')
 
         start = time.perf_counter()
-        result, lemmas, self.lemma_obj = self.t.lemmatize_no_print(self.text)
+        result, lemmas,  self.lemma_obj, pos_output, lemma_pos = self.t.lemmatize_no_print(self.text)
         end = time.perf_counter()
         print(f"Time Elapsed: {end - start}")
 
@@ -56,11 +62,12 @@ class LemmatizeThread(QThread):
         exclude_invalid = self.t.exclude_invalid()
         annotation = self.t.show_annotation()
         source_to_target = self.t.source_to_target
+        self.mode = 0
 
         # To be send to the main UI sadhkjasdhas
         self.finished.emit(result, valid_tokens, lemmas,
                            invalid_tokens, tokenized, morphemes, result_removed_sw,
-                           exclude_invalid, annotation, source_to_target, self.lemma_obj)
+                           exclude_invalid, annotation, source_to_target, self.lemma_obj, pos_output, lemma_pos)
 
 
 class CustomProgressDialog(QProgressDialog):
@@ -125,6 +132,8 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.t_thread = None
         self.taglemma = TagLemma.TagLemma()
         self.headerWidget.setMinimumHeight(150)
+        
+        
 
         # set the size for the btns in landing page
         self.lemmaBtn.setSizePolicy(
@@ -194,15 +203,26 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
         self.horizontalSpacer_4 = QSpacerItem(
             40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        
         self.horizontalLayout_7.addItem(self.horizontalSpacer_4)
         self.export_annotation = QPushButton(parent=self.annotationPage)
         self.export_annotation.setObjectName(u"export_annotation")
         self.export_annotation.setText("Export Annotation")
+        self.export_annotation.setCursor(QtGui.QCursor(
+            QtCore.Qt.CursorShape.PointingHandCursor))
         self.horizontalLayout_7.addWidget(self.export_annotation)
+        
+        self.annotation_mode = QPushButton(parent=self.annotationPage)
+        self.annotation_mode.setObjectName(u"annotation_mode")
+        self.annotation_mode.setText("Switch to Morphological Parsing")
+        self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")
+        self.annotation_mode.setCursor(QtGui.QCursor(
+            QtCore.Qt.CursorShape.PointingHandCursor))
+        self.horizontalLayout_7.addWidget(self.annotation_mode)
         self.verticalLayout_6.addLayout(self.horizontalLayout_7)
-        self.annotationTable.setReadOnly(True)
+        self.annotation_mode.clicked.connect(self.switch_mode)
         self.export_annotation.clicked.connect(self.save_json)
-
+    
     def fuzzy_dialog(self):
         self.processDropdown.hide()
         self.processDropdownLabel.hide()
@@ -309,16 +329,44 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     # this set the behavior of the results using the combobox
     def combo_box_changed(self, i):
+        cursor = self.resultText.textCursor()
+        fmt = QTextCharFormat()
+        fmt.setForeground(QColor("white")) 
+        fmt.setBackground(QColor("#1f6663"))
+        reset = QTextCharFormat()
+        reset.setForeground(QColor("black"))
+        reset.setBackground(QColor("white"))
         if i == 0:
+            self.resultText.clear()
             if not self.valid_result:
                 self.resultText.setPlainText("No Valid Text to Lemmatize.")
                 return
-            self.resultText.setPlainText(self.valid_result) 
+            cursor.insertText(self.valid_result, reset)
+            self.mode = 0
             
         elif i == 1:
-            self.resultText.setPlainText(self.result)
-
-
+            words = self.result.split()
+            self.resultText.clear()
+            for word in words:
+                if word in self.valid_result.split():
+                    cursor.insertText(word, fmt)
+                    cursor.insertText(" ", reset)
+                else:
+                    cursor.insertText(word + " ", reset)
+            cursor.insertText(" ", reset)
+            self.mode = 1
+            #self.resultText.setPlainText(self.result)
+        
+        # new item in drop down list to display POS tagging feature
+        elif i == 2:
+            words = self.pos_output
+            self.resultText.clear()
+            self.resultText.set_parser(self.parser)
+            self.resultText.insertPlainText("Legend: NN(Noun/Pangngalan), VRB(Verb/Pandiwa), ADJ(Adjective/Pang-uri),\nADV(Adverb/Pang-abay), UNK(Unknown)\n")
+            for index, word in enumerate(words):
+                self.resultText.append_link(f"link {index}", word)
+            self.mode = 2
+        
 
     # sets the maximum char count for the input of words
     def max_char_count(self):
@@ -415,7 +463,7 @@ class MainMenu(QMainWindow, Ui_MainWindow):
 
     # update UI from another threadsasdasd
     def on_lemmatization_complete(self, result, valid_tokens, lemmas, invalid_tokens,
-                                  tokenized, morphemes, result_removed_sw, exclude_invalid, annotation, source_to_target):
+                                  tokenized, morphemes, result_removed_sw, exclude_invalid, annotation, source_to_target, TagLemma, pos_output, lemma_pos):
         
         self.processText.setPlainText("")
         
@@ -425,18 +473,22 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         self.lemmas = lemmas
         self.invalid_tokens = invalid_tokens
         self.result = result  # store the lemma
+        self.pos_output = pos_output
+        self.lemma_pos = lemma_pos
         self.tokenized = tokenized
         self.morphemes = morphemes
         self.result_removed_sw = result_removed_sw
         self.exclude_invalid = exclude_invalid
-        self.annotation = annotation
+        self.annotation, _ = annotation
+        self.parser = self.restructure(annotation[1])
         self.source_to_target = source_to_target
         self.thread = None
         self.comboBox.setEnabled(True)
         self.disable_features(True)
         self.comboBox.show()
-        self.comboBoxLabel.show()
-        
+        self.comboBoxLabel.show() 
+        # annotation mode global variable 
+        self.mode = 1
 
         self.keys = list(self.source_to_target.keys())
         self.processDropdown.addItems(self.keys)
@@ -446,13 +498,32 @@ class MainMenu(QMainWindow, Ui_MainWindow):
         else: 
             self.resultText.setPlainText("No Valid Text to Lemmatize.")
     
-
         if annotation:
-            temp = json.dumps(annotation, indent=6)
+            temp = json.dumps(annotation[0], indent=4)
             self.annotationTable.setPlainText(temp)
         else:
             self.annotationTable.setPlainText("No annotation to display.")
 
+    def restructure(self, data):
+        restructured_data = []
+        for entry in data:
+            token_entry = {
+                "word": entry["word"],
+                "lemma": entry["lemma"],
+                "morphological_similarity": entry["morph_sim"],
+                "part-of-speech": entry["pos"],
+                "tag": entry["tag"],
+                "definition": entry["definition"],
+                "morphology": {
+                          "root":entry["morph"]["root"], 
+                          "prefix":entry["morph"]["prefix"],
+                          "infix":entry["morph"]["infix"], 
+                          "suffix":entry["morph"]["suffix"], 
+                          "repeat":entry["morph"]["dedupli"]
+                },
+            }
+            restructured_data.append(token_entry)
+        return restructured_data
 
     def valid_tokens_function(self):
         result_str = ", ".join(self.valid_tokens)
@@ -491,18 +562,109 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             try:
                 # initiate pdf class
                 page = pdf.PDF()
-                # printing process
-                page.add_list("Input:")
-                page.add_list(self.inputText.toPlainText())
+                print(bool(re.search(r'\d', self.inputText.toPlainText())))
+                if bool(re.search(r'\d', self.resultText.toPlainText())):
+                    # printing process
+                    page.add_list("Result")
+                    user_input = self.inputText.toPlainText()
+                    system_output = self.resultText.toPlainText()
+                    list_one = re.split(r'\d+', user_input)
+                    list_two = re.split(r'\d+', system_output)
 
-                page.add_list("")
-                page.add_list("")
-                page.add_list("Output:")
-                page.add_list(self.resultText.toPlainText())
-                # Generate and save the PDF at the chosen location
-                page.output(file_path)
-                self.message_dialog(QMessageBox.Icon.Information,
+                    index = 1
+                    for item in range(len(list_one) - 1):
+                        page.add_list(f"input: {index} " + list_one[index])
+                        page.add_list(f"output: {index} " + list_two[index])
+                        index += 1
+                    index = 0
+
+                    page.add_list("")
+                    page.add_list("")
+                    page.add_list(list_two[0])
+
+                    if self.mode == 2:
+                        page.insert_page()
+                        page.add_list("Dictionary:")
+                        html = """
+                        <table width="100%" border="1" cellspacing="0" cellpadding="4">
+                        <thead>
+                            <tr style="background-color: #f2f2f2; border-bottom: 1px solid black;">
+                            <th align="left" width="5%">#</th>
+                            <th align="left" width="8%">Word</th>
+                            <th align="left" width="8%">Lemma</th>
+                            <th align="left" width="8%">Part of Speech</th>
+                            <th align="left" width="12%">Definition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        """
+
+                        for index, item in enumerate(self.parser):
+                            html += f"""
+                            <tr style="background-color: #f2f2f2; border-bottom: 1px solid black;">
+                            <td>{index + 1}</td>
+                            <td>{item['word']}</td>
+                            <td>{item['lemma']}</td>
+                            <td>{item['part-of-speech']}</td>
+                            <td>{item['definition']}</td>
+                            </tr>
+                            """
+
+                        html += """
+                        </tbody>
+                        </table>
+                        """
+                        page.add_table(html)
+                        # Generate and save the PDF at the chosen location
+                        page.output(file_path)
+                        self.message_dialog(QMessageBox.Icon.Information,
                                     f"File saved successfully: {file_path}", "Success")
+                else:
+                        # printing process
+                        page.add_list("Input:")
+                        page.add_list(self.inputText.toPlainText())
+
+                        page.add_list("")
+                        page.add_list("")
+                        page.add_list("Output:")
+                        page.add_list(self.resultText.toPlainText())
+                        if self.mode == 2:
+                            page.insert_page()
+                            page.add_list("Dictionary:")
+                            html = """
+                            <table width="100%" border="1" cellspacing="0" cellpadding="4">
+                            <thead>
+                                <tr style="background-color: #f2f2f2; border-bottom: 1px solid black;">
+                                <th align="left" width="5%">#</th>
+                                <th align="left" width="8%">Word</th>
+                                <th align="left" width="8%">Lemma</th>
+                                <th align="left" width="8%">Part of Speech</th>
+                                <th align="left" width="12%">Definition</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            """
+
+                            for index, item in enumerate(self.parser):
+                                html += f"""
+                                <tr style="background-color: #f2f2f2; border-bottom: 1px solid black;">
+                                <td>{index + 1}</td>
+                                <td>{item['word']}</td>
+                                <td>{item['lemma']}</td>
+                                <td>{item['part-of-speech']}</td>
+                                <td>{item['definition']}</td>
+                                </tr>
+                                """
+
+                            html += """
+                            </tbody>
+                            </table>
+                            """
+                            page.add_table(html)
+                        # Generate and save the PDF at the chosen location
+                        page.output(file_path)
+                        self.message_dialog(QMessageBox.Icon.Information,
+                                            f"File saved successfully: {file_path}", "Success")
             except Exception as e:
                 print(e)
                 self.message_dialog(QMessageBox.Icon.Warning,
@@ -527,7 +689,6 @@ class MainMenu(QMainWindow, Ui_MainWindow):
     def update_input_label(self):
         x = len(self.inputText.toPlainText())
         self.inputLabelChar.setText(f" Input Character Count: {x}")
-
 
     def update_result_label(self):
         x = len(self.resultText.toPlainText())
@@ -566,10 +727,16 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             text = file.read()
         return text
     
+    def compact_morph_fields(data):
+        for item in data:
+            if 'morph' in item:
+                item['morph'] = json.loads(json.dumps(item['morph'], separators=(',', ':')))
+        return data
+
     def save_json(self):
         # Open a file dialog to choose save location
         today_date = datetime.now().strftime("%Y-%m-%d")
-        default_file_name = "TALA_" + today_date + "_Tagalog_InflectionToLemma_Annotation"
+        default_file_name = "TALA_" + today_date + "_Tagalog_Annotation"
         
         file_path, _ = QFileDialog.getSaveFileName(
             self, "Save JSON File", default_file_name, "JSON Files (*.json);;All Files (*)")
@@ -578,7 +745,11 @@ class MainMenu(QMainWindow, Ui_MainWindow):
             try:
                 with open(file_path, "w", encoding="utf-8") as file:
                     # Write JSON to file
-                    json.dump(self.annotation, file, indent=4)
+                    # added mode switching handler
+                    if self.mode == 1:
+                        json.dump(self.annotation, file, indent=4)
+                    elif self.mode == 0:
+                        json.dump(self.parser, file, indent=4)
                 print(f"File saved successfully: {file_path}")
                 self.message_dialog(QMessageBox.Icon.Information,
                                     f"File saved successfully: {file_path}", "Success")
@@ -587,6 +758,37 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                 self.message_dialog(QMessageBox.Icon.Warning,
                                     f"Error saving file: {e}", "Warning")
 
+    # mode switch function for parsed text and annotation text
+    def switch_mode(self):
+        self.mode = 1 if self.mode == 0 else 0
+
+        if self.mode == 1:
+            # Lemma:Inflection mode — just pretty print
+            temp = json.dumps(self.annotation, indent=4)
+            self.annotationTable.setPlainText(temp)
+            self.annotation_mode.setText("Switch to Morphological Parsing")
+
+        else:
+            # Morphological Parsing mode — format morphemes as single-line
+            formatted = []
+            for item in self.parser:
+                morph_str = json.dumps(item["morphology"], separators=(",", ": "))
+                item_copy = dict(item)
+                del item_copy["morphology"]
+
+                pretty = json.dumps(item_copy, indent=4).splitlines()
+                pretty = pretty[:-1]
+                pretty.append(f'    "morphology": {morph_str}')
+                pretty.append("}")
+                formatted.append("\n".join(pretty))
+
+            final_output = "[\n" + ",\n".join(formatted) + "\n]"
+            self.annotationTable.setPlainText(final_output)
+            self.annotation_mode.setText("Switch to Lemma-Inflection Pair")
+
+        self.annotation_mode.setStyleSheet("background: #1f6663; color: white;")
+        
+    
     # function connectors for stacked widget
     def switch_to_feature(self):
         self.stackedWidget.setCurrentIndex(0)
@@ -791,6 +993,15 @@ class MainMenu(QMainWindow, Ui_MainWindow):
                     gridline-color: black;
                 }
             """))
+        
+        self.resultText.setStyleSheet("""
+            background: #ffffff;
+            border: 2px solid black;
+            border-radius: 5px;
+            font-size: 18px;
+            font-family: "Consolas";  
+            padding-left: 10px;                         
+        """)
 
 
         self.featureBtn.setIcon(QIcon("assets/feature-icon.png"))

@@ -1,5 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from custombutton import CustomButton
+from ClassEdit import ClickableTextEdit
+
 
 
 class Ui_MainWindow(object):
@@ -52,7 +54,7 @@ class Ui_MainWindow(object):
         self.processBtn = CustomButton("assets/engineering.png", "Process", "\nSee the lemmatization process behind the scene", self.featurePage)
         self.processBtn.setObjectName("processBtn")
         self.horizontalLayout_4.addWidget(self.processBtn)
-        self.annotationBtn = CustomButton("assets/note.png", "Annotation", "\nKey value pair of lemma and its inflected forms", self.featurePage)
+        self.annotationBtn = CustomButton("assets/note.png", "Annotation", "\nLemma-Inflection Pair and Morphological Parsing", self.featurePage)
         self.annotationBtn.setObjectName("annotationBtn")
         self.horizontalLayout_4.addWidget(self.annotationBtn)
         self.stackedWidget.addWidget(self.featurePage)
@@ -80,7 +82,7 @@ class Ui_MainWindow(object):
         self.resulLabel = QtWidgets.QLabel(parent=self.lemmaPage)
         self.resulLabel.setObjectName("resulLabel")
         self.verticalLayout_2.addWidget(self.resulLabel)
-        self.resultText = QtWidgets.QPlainTextEdit(parent=self.lemmaPage)
+        self.resultText = ClickableTextEdit(parent=self.lemmaPage)
         self.resultText.setObjectName("resultText")
         self.verticalLayout_2.addWidget(self.resultText)
         self.horizontalLayout.addLayout(self.verticalLayout_2)
@@ -93,6 +95,7 @@ class Ui_MainWindow(object):
         self.exportBtn.setObjectName("exportBtn")
         self.comboBox = QtWidgets.QComboBox(parent=self.lemmaPage)
         self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItem("")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum)
@@ -211,6 +214,7 @@ class Ui_MainWindow(object):
         self.exportBtn.setText(_translate("MainWindow", "Export"))
         self.comboBox.setItemText(0, _translate("MainWindow", "Lemmatized Words Only"))
         self.comboBox.setItemText(1, _translate("MainWindow", "Include Unprocessed Words"))
+        self.comboBox.setItemText(2, _translate("MainWindow", "Include POS Tags + Meaning"))
         self.lemmatizeBtn.setText(_translate("MainWindow", "Lemmatize"))
         self.clearBtn.setText(_translate("MainWindow", "Clear"))
         self.label.setText(_translate("MainWindow", "Validation"))
